@@ -81,12 +81,11 @@ export function careerUI(manifest, send, images, mapThumbnail) {
       "",
       location.href,
     );
-    renderLobbyPage(initialPage);
   }
   let profile = null,
     busy = false,
     inRoom = false,
-    onboardingShown = false,
+    entryDesign = false,
     savingAppearance = false,
     draft = { ...DEFAULT_APPEARANCE };
   const portrait = (recipe) =>
@@ -100,12 +99,6 @@ export function careerUI(manifest, send, images, mapThumbnail) {
   function previewAppearance() {
     const key = `prince-red-stand-${previewDirection}`;
     const image = images.get(key);
-    console.log('[外观预览] 开始生成预览');
-    console.log('[外观预览] key:', key);
-    console.log('[外观预览] image 存在:', !!image);
-    console.log('[外观预览] images Map 大小:', images.size);
-    console.log('[外观预览] prince 图片:', Array.from(images.keys()).filter(k => k.startsWith('prince-red-stand')));
-
     if (!image) {
       console.error('[外观预览] 错误: 图片未找到!');
       return;
@@ -113,7 +106,6 @@ export function careerUI(manifest, send, images, mapThumbnail) {
 
     try {
       const url = portraitURL(image, draft, key);
-      console.log('[外观预览] 成功生成 URL，长度:', url ? url.length : 0);
       $("appearance-preview").src = url;
       $("appearance-preview").classList.toggle("decorated", hasLargeDecor(draft));
     } catch (e) {
@@ -151,23 +143,22 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     syncDraft();
   };
   function editAppearance() {
-    draft = { ...DEFAULT_APPEARANCE, ...profile?.appearance };
+    draft = entryDesign
+      ? { ...DEFAULT_APPEARANCE }
+      : { ...DEFAULT_APPEARANCE, ...profile?.appearance };
+    previewDirection = 3;
+    for (const button of document.querySelectorAll("[data-preview-dir]"))
+      button.setAttribute("aria-pressed", String(button.dataset.previewDir === "3"));
     for (const select of document.querySelectorAll("[data-appearance]"))
       select.value = draft[select.dataset.appearance];
     $("appearance-status").textContent = "";
+    previewAppearance();
     openLobbyPage("appearance-dialog");
-    // 立即尝试生成预览，不依赖事件
-    setTimeout(() => {
-      console.log('[外观预览] editAppearance setTimeout 调用 previewAppearance');
-      previewAppearance();
-    }, 100);
   }
 
-  // 监听对话框打开事件，在外观对话框显示后生成预览（双重保险）
+  // 历史导航返回编辑器时保留当前草稿并恢复预览。
   window.addEventListener("lobby-page-change", (e) => {
-    console.log('[外观预览] lobby-page-change 事件触发, detail:', e.detail);
     if (e.detail === "appearance-dialog") {
-      console.log('[外观预览] 检测到 appearance-dialog 打开，调用 previewAppearance');
       previewAppearance();
     }
   });
@@ -197,8 +188,16 @@ export function careerUI(manifest, send, images, mapThumbnail) {
         `<figure><img src="${portrait(recipe)}" alt="${recipe.name}"><figcaption>${recipe.name}</figcaption></figure>`,
     )
     .join("");
-  $("appearance-open").onclick = editAppearance;
-  $("close-appearance").onclick = () => closeLobbyPage();
+  $("appearance-open").onclick = () => {
+    entryDesign = false;
+    $("close-appearance").textContent = "返回";
+    $("appearance-save").textContent = "保存外观";
+    editAppearance();
+  };
+  $("close-appearance").onclick = () => {
+    if (entryDesign) saveAppearance(draft);
+    else closeLobbyPage();
+  };
   function saveAppearance(value) {
     if (
       send({ type: "profile-change", action: { type: "appearance", value } })
@@ -369,22 +368,22 @@ export function careerUI(manifest, send, images, mapThumbnail) {
   $("guide-open").onclick = () => openLobbyPage("guide-dialog");
   $("close-guide").onclick = () => closeLobbyPage();
   $("skill-use").onclick = () => send({ type: "skill" });
+  // 控件与预览监听器就绪后再恢复地址栏指定的页面。
+  if (lobbyPages.includes(initialPage)) renderLobbyPage(initialPage);
   return {
     profile(value) {
+      const firstProfile = profile === null;
       profile = value;
       busy = false;
       render();
       if (savingAppearance) {
         savingAppearance = false;
         $("appearance-status").textContent = "外观已保存";
-        closeLobbyPage();
-      } else if (
-        !onboardingShown &&
-        !profile.appearanceConfigured &&
-        !profile.matches &&
-        !document.body.dataset.lobbyPage
-      ) {
-        onboardingShown = true;
+        closeLobbyPage(true);
+      } else if (firstProfile) {
+        entryDesign = true;
+        $("close-appearance").textContent = "确认并进入";
+        $("appearance-save").textContent = "保存并进入大厅";
         editAppearance();
       }
     },
