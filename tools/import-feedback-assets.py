@@ -29,6 +29,5 @@ halo = root/'QQtang/BOSS单机版/BOSS单机版m1/resources/magic/magic0139'
 atlas('spawn-halo', [Image.open(p).convert('RGBA') for p in sorted(halo.glob('*.png'), key=lambda p:int(p.stem))], 100)
 for key in 'tyuiop':
     atlas(f'emote-{key}', [Image.open(root/f'QQtang/音效/快捷键表情/按键{key}.png').convert('RGBA')], 100)
-shutil.copy2(root/'PVE整合包v20240309/res/font/simsun.ttc', dest/'simsun.ttc')
-shutil.copy2(root/'PVE整合包v20240309/res/font/century.ttf', dest/'century.ttf')
+# 字体已改用 Fusion Pixel (OFL)，不再复制 simsun.ttc / century.ttf
 (dest/'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False), encoding='utf8')
