@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>外观预览测试</title>
+  <style>
+    body { font-family: 'Fusion Pixel', sans-serif; padding: 20px; }
+  </style>
+</head>
+<body>
+  <h1>外观预览测试</h1>
+  <img id="preview" alt="测试预览">
+  <pre id="log"></pre>
+  
+  <script type="module">
+    const log = document.getElementById('log');
+    function addLog(msg) {
+      log.textContent += msg + '\n';
+      console.log(msg);
+    }
+    
+    try {
+      addLog('开始加载模块...');
+      const { portraitURL, DEFAULT_APPEARANCE, setAppearanceAssets } = await import('./appearance.mjs');
+      addLog('✓ appearance.mjs 加载成功');
+      
+      addLog('加载图片...');
+      const img = new Image();
+      img.onload = () => {
+        addLog('✓ prince-red-stand-3.png 加载成功: ' + img.width + 'x' + img.height);
+        
+        const images = new Map();
+        images.set('prince-red-stand-3', img);
+        setAppearanceAssets(images);
+        
+        addLog('生成预览...');
+        const url = portraitURL(img, DEFAULT_APPEARANCE, 'prince-red-stand-3');
+        addLog('✓ 预览生成成功，长度: ' + url.length);
+        
+        document.getElementById('preview').src = url;
+        addLog('✓ 预览显示成功');
+      };
+      img.onerror = (e) => {
+        addLog('✗ 图片加载失败: ' + e);
+      };
+      img.src = '/assets/prince-red-stand-3.png';
+      
+    } catch (e) {
+      addLog('✗ 错误: ' + e.message);
+      addLog(e.stack);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Console Check</title>
+</head>
+<body>
+  <h1>Checking appearance preview...</h1>
+  <pre id="output"></pre>
+  
+  <script>
+    const output = document.getElementById('output');
+    function log(msg) {
+      output.textContent += msg + '\n';
+    }
+    
+    // Redirect to main page
+    log('Redirecting to main page in 2 seconds...');
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 2000);
+  </script>
+</body>
+</html>

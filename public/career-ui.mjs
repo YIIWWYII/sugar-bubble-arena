@@ -99,8 +99,26 @@ export function careerUI(manifest, send, images, mapThumbnail) {
   }
   function previewAppearance() {
     const key = `prince-red-stand-${previewDirection}`;
-    $("appearance-preview").src = portraitURL(images.get(key), draft, key);
-    $("appearance-preview").classList.toggle("decorated", hasLargeDecor(draft));
+    const image = images.get(key);
+    console.log('[外观预览] 开始生成预览');
+    console.log('[外观预览] key:', key);
+    console.log('[外观预览] image 存在:', !!image);
+    console.log('[外观预览] images Map 大小:', images.size);
+    console.log('[外观预览] prince 图片:', Array.from(images.keys()).filter(k => k.startsWith('prince-red-stand')));
+
+    if (!image) {
+      console.error('[外观预览] 错误: 图片未找到!');
+      return;
+    }
+
+    try {
+      const url = portraitURL(image, draft, key);
+      console.log('[外观预览] 成功生成 URL，长度:', url ? url.length : 0);
+      $("appearance-preview").src = url;
+      $("appearance-preview").classList.toggle("decorated", hasLargeDecor(draft));
+    } catch (e) {
+      console.error('[外观预览] 生成失败:', e.message, e.stack);
+    }
   }
   $("appearance-presets").innerHTML = Object.entries(APPEARANCE_PRESETS)
     .map(
@@ -137,9 +155,22 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     for (const select of document.querySelectorAll("[data-appearance]"))
       select.value = draft[select.dataset.appearance];
     $("appearance-status").textContent = "";
-    previewAppearance();
     openLobbyPage("appearance-dialog");
+    // 立即尝试生成预览，不依赖事件
+    setTimeout(() => {
+      console.log('[外观预览] editAppearance setTimeout 调用 previewAppearance');
+      previewAppearance();
+    }, 100);
   }
+
+  // 监听对话框打开事件，在外观对话框显示后生成预览（双重保险）
+  window.addEventListener("lobby-page-change", (e) => {
+    console.log('[外观预览] lobby-page-change 事件触发, detail:', e.detail);
+    if (e.detail === "appearance-dialog") {
+      console.log('[外观预览] 检测到 appearance-dialog 打开，调用 previewAppearance');
+      previewAppearance();
+    }
+  });
   $("appearance-fields").innerHTML = [
     ["基础造型", ["hair", "skin", "outfit", "style", "eyes", "mouth"]],
     ["服饰与装备", ["accessory", "back", "held", "shoes"]],
