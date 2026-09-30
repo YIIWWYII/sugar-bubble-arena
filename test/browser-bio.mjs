@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import {spawn}from 'node:child_process';import {mkdtempSync,rmSync}from 'node:fs';import path from 'node:path';import {chromium}from '@playwright/test';
+const root=process.cwd(),work=path.resolve(root,'../../work'),temp=mkdtempSync(path.join(work,'bio-browser-')),port=18905;
+const server=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,PORT:String(port),PROFILE_FILE:path.join(temp,'profiles.json'),PUBLIC_ORIGIN:''},windowsHide:true,stdio:['ignore','pipe','pipe']});let browser;
+try{
+ await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',c=>reject(Error(`server ${c}`)))});
+ browser=await chromium.launch({channel:'chrome',headless:true});const page=await(await browser.newContext({viewport:{width:1280,height:900}})).newPage();let state;const errors=[];
+ page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`)});page.on('websocket',ws=>ws.on('framereceived',({payload})=>{const m=JSON.parse(payload);if(m.type==='state')state=m;}));
+ const until=async(fn,timeout=15000)=>{const start=Date.now();while(!fn()){if(Date.now()-start>timeout)throw Error('bio timeout');await page.waitForTimeout(50)}};
+ const enter=async(p)=>{await p.goto(`http://localhost:${port}`);await p.locator('#career-open:not([disabled])').waitFor({state:'attached'});if(await p.locator('#appearance-dialog').isVisible())await p.click('#appearance-skip');await p.locator('#home-panel').waitFor({state:'visible'});};
+ await enter(page);await page.click('[data-ruleset="bio"]');await page.click('#map-picker-open');await page.click('[data-map="bio-district"]');await page.click('#ai-play');await page.locator('#survivor-picks').waitFor({state:'visible'});
+ const t=state.time;await page.waitForTimeout(500);assert.equal(state.time,t);assert.equal(state.players[0].bioBuild.pending,3);assert.equal(await page.locator('.survivor-card').count(),3);
+ const panel=await page.locator('#survivor-picks').boundingBox();assert(panel.width<720&&panel.height<600);assert(await page.locator('#game').isVisible());assert.equal(await page.locator('.app').evaluate(e=>getComputedStyle(e).display==='none'),false);assert(await page.locator('#survivor-picks').evaluate(e=>getComputedStyle(e).backgroundColor.startsWith('rgba')));
+ await page.screenshot({path:path.join(work,'bio-choices.png')});await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(work,'bio-choices-mobile.png'),fullPage:true});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert((await page.locator('#survivor-picks').boundingBox()).height<844*.8);await page.setViewportSize({width:1280,height:900});
+ for(let i=0;i<3;i++){const token=state.players[0].bioBuild.offerId;await page.locator('.survivor-card').first().click();await until(()=>state.players[0].bioBuild.offerId!==token||!state.bio.paused);}
+ assert(!state.bio.paused);assert.equal(state.players[0].bioBuild.pending,0);const population=state.enemies.length,ids=state.enemies.map(e=>e.id);assert(state.enemies.every(e=>e.faction==='human'));assert.equal(state.players[0].antidotes>=1,true);
+ await until(()=>state.bio.phase==='outbreak',24000);assert(ids.includes(state.bio.motherId));assert(state.enemies.some(e=>e.mother));await page.screenshot({path:path.join(work,'bio-outbreak.png')});
+ await until(()=>state.items.some(i=>i.kind==='aid'),16000);assert.equal(state.enemies.length,population);assert(state.items.filter(i=>i.kind==='aid').every(i=>!('reward' in i)));await page.screenshot({path:path.join(work,'bio-aid.png')});
+ await page.click('#leave-game');await page.locator('#home-panel').waitFor({state:'visible'});
+ // Two clients share all three opening decisions; one ready player cannot advance the clock.
+ await page.click('[data-mode="online"]');await page.click('#create-room');await page.locator('#room-panel').waitFor({state:'visible'});const code=await page.locator('#room-number').innerText();
+ const friend=await(await browser.newContext()).newPage();await enter(friend);await friend.click('#rooms-open');await friend.fill('#room-code',code);await friend.click('#join-room');await friend.locator('#room-panel').waitFor({state:'visible'});await friend.click('#ready-button');await until(()=>state.players.length===2&&state.players.some(p=>p.ready));await page.click('#ready-button');await page.locator('#survivor-picks').waitFor({state:'visible'});
+ for(let i=0;i<3;i++){const token=state.players[0].bioBuild.offerId;await page.locator('.survivor-card').first().click();await until(()=>state.players[0].bioBuild.offerId!==token||!state.players[0].bioBuild.offers.length);}
+ const held=state.time;await page.waitForTimeout(400);assert.equal(state.time,held);assert(state.bio.paused);
+ for(let i=0;i<3;i++){await friend.locator('.survivor-card').first().click();await friend.waitForTimeout(200);}await until(()=>!state.bio.paused);assert(state.players.every(p=>p.bioBuild.pending===0));assert.deepEqual(errors,[]);
+ console.log('PASS: three opening rounds, translucent compact panel, visible battlefield, mobile, mother from existing AI at 20s, opaque aid at 30s, two-client synchronized picks, no browser errors');
+}finally{await browser?.close();server.kill();if(server.exitCode===null)await new Promise(resolve=>server.once('exit',resolve));rmSync(temp,{recursive:true,force:true});}
