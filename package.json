@@ -1,9 +1,9 @@
 {
-  "name": "qqt-star-remake",
+  "name": "sugar-bubble-arena",
   "version": "0.6.0",
   "private": true,
   "type": "module",
-  "description": "QQ堂· 星空复刻版 —— 抢包山 6 的网页复刻",
+  "description": "糖泡对战 —— 多模式联机游戏",
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test test/*.test.mjs"

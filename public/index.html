@@ -3,75 +3,100 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#075f97">
-  <title>QQ堂· 星空复刻版 - 抢包山 6 网页版，免下载在线联机</title>
-  <meta name="description" content="《QQ堂》经典玩法「抢包山 6」的网页复刻版。无需下载客户端，浏览器打开即可与朋友 2–8 人实时联机对战，另含水面 11 的 1–5 人 PVE 合作模式。">
-  <meta name="keywords" content="QQ堂,抢包山,QQ堂网页版,QQ堂复刻,QQ堂在线玩,QQ堂联机,停服游戏,怀旧游戏,水面11">
-  <link rel="canonical" href="https://qqt.starovo.top/">
+  <title>糖泡对战 · 多模式联机游戏</title>
+  <meta name="description" content="糖泡对战：经典抢包、首领挑战、生化生存、幸存者与水面合作。支持角色养成、局内强化和好友联机。">
+  <meta name="keywords" content="糖泡对战,联机游戏,生化生存,幸存者,首领挑战">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="QQ堂· 星空复刻版">
+  <meta property="og:site_name" content="糖泡对战">
   <meta property="og:locale" content="zh_CN">
-  <meta property="og:url" content="https://qqt.starovo.top/">
-  <meta property="og:title" content="QQ堂· 星空复刻版 - 抢包山 6 网页版，免下载在线联机">
-  <meta property="og:description" content="《QQ堂》经典玩法「抢包山 6」的网页复刻版。无需下载客户端，浏览器打开即可与朋友 2–8 人实时联机对战。">
-  <meta property="og:image" content="https://qqt.starovo.top/assets/og-cover.jpg">
+  <meta property="og:title" content="糖泡对战 · 多模式联机游戏">
+  <meta property="og:description" content="糖泡对战：经典抢包、首领挑战、生化生存、幸存者与水面合作。支持角色养成、局内强化和好友联机。">
+  <meta property="og:image" content="/assets/og-cover.jpg">
   <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="QQ堂· 星空复刻版 - 抢包山 6 网页版，免下载在线联机">
-  <meta name="twitter:description" content="《QQ堂》经典玩法「抢包山 6」的网页复刻版，浏览器打开即可联机对战。">
-  <meta name="twitter:image" content="https://qqt.starovo.top/assets/og-cover.jpg">
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <meta name="twitter:title" content="糖泡对战 · 多模式联机游戏">
+  <meta name="twitter:description" content="糖泡对战：经典抢包、首领挑战、生化生存、幸存者与水面合作。支持角色养成、局内强化和好友联机。">
+  <meta name="twitter:image" content="/assets/og-cover.jpg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=sugar-bubble">
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png?v=sugar-bubble">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=sugar-bubble">
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/extras.css">
+  <link rel="preload" href="/assets/fonts/fusion-pixel-12px-zh-hans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/lobby.css">
 </head>
-<body>
+<body data-screen="home">
+  <svg xmlns="http://www.w3.org/2000/svg" class="icon-defs" aria-hidden="true"><defs>
+    <symbol id="icon-play" viewBox="0 0 24 24"><path d="M9 5h3v3h4v3h4v2h-4v3h-4v3H9Z"/><path d="M3 6v12"/></symbol>
+    <symbol id="icon-user" viewBox="0 0 24 24"><path d="M8 3h8v8H8ZM4 21v-6h4v-2h8v2h4v6"/></symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24"><path d="M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3ZM12 6v16"/></symbol>
+    <symbol id="icon-room" viewBox="0 0 24 24"><path d="M3 11h3V8h3V5h6v3h3v3h3v10H3Z"/><path d="M9 21v-8h6v8"/></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+  </defs></svg>
   <noscript>
     <div style="max-width:42em;margin:0 auto;padding:2em 1em;font:16px/1.8 system-ui,'Microsoft YaHei',sans-serif">
-      <h1>QQ堂· 星空复刻版</h1>
-      <p>《QQ堂》经典玩法「抢包山 6」的网页复刻版。<strong>本游戏需要 JavaScript 与 WebSocket</strong>，请在支持这两项的浏览器中打开本页。</p>
-      <p>玩法：双方各守一间包子房，进入对方房内夺取包子并背回自家，先抢齐对方三个包子的一方获胜。支持 2–8 人实时联机对战，另含水面 11 的 1–5 人 PVE 合作模式。</p>
-      <p>源码与说明见 <a href="https://github.com/Ker0el/qqt-bun6">github.com/Ker0el/qqt-bun6</a>。代码以 MIT 许可开源；美术与音频素材权属腾讯，仅供学习与技术交流。</p>
-      <p>本项目与腾讯公司无任何关联。</p>
+      <h1>糖泡对战</h1>
+      <p>包含经典抢包、首领挑战、生化生存、幸存者和水面合作。<strong>运行游戏需要 JavaScript 与 WebSocket</strong>，请使用支持这些功能的浏览器。</p>
+      <p>联机、角色养成与局内强化均在游戏内操作。</p>
     </div>
   </noscript>
   <main class="app">
     <header class="topbar">
-      <div class="brand"><span class="brand-mark">QQ<span>堂</span></span></div>
+      <div class="brand"><span class="brand-mark">糖泡<span>对战</span></span></div><div id="lobby-wallet" class="lobby-wallet" aria-label="养成资源">正在读取档案</div>
       <div class="connection"><span id="connection-dot"></span><span id="connection-label">连接中…</span><span id="latency">— ms</span></div>
     </header>
-    <section class="game-frame" aria-label="QQ堂游戏">
+    <section class="game-frame" aria-label="糖泡对战游戏">
       <div class="game-stage" id="stage">
-        <canvas id="game" width="800" height="600" tabindex="0" aria-label="抢包山6游戏画面，方向键移动，空格放泡"></canvas>
-        <div class="loading" id="loading"><b>正在打开糖果王国…</b><span id="load-progress">正在加载素材中...</span></div>
-        <div class="overlay" id="home-panel" hidden>
-          <div class="window-title"><span>QQ堂 · 联机大厅</span><span class="window-star">✦</span></div>
-          <div class="window-content">
-            <div class="lobby-title"><strong>抢包山 6</strong><span id="lobby-count">正在读取大厅…</span></div>
-            <label class="field">你的昵称<input id="nickname" value="糖友" maxlength="12" autocomplete="off" spellcheck="false"></label>
-            <label class="field">地图<select id="map-select"><option value="bun06_8">抢包山 6 · 红蓝对战</option><option value="water11_8">水面 11 · 海盗水手（1–5人合作）</option></select></label>
-            <button class="gold-button" id="create-room">创建联机房间 <span>→</span></button>
-            <div class="public-rooms" id="public-rooms" aria-label="公开房间列表"><p class="empty-lobby">暂时没有房间，来创建第一间吧。</p></div>
-            <div class="join-row"><input id="room-code" placeholder="输入 6 位房间号" inputmode="numeric" maxlength="6" aria-label="房间号"><button class="blue-button" id="join-room">加入</button></div>
-            <div class="divider"><span>也可以先找回手感</span></div>
-            <button class="practice-button" id="practice">进入单人练习场</button>
-            <p class="small-note">所有玩家共享房间列表 · 红蓝人数相等后开局</p>
+        <canvas id="game" width="800" height="600" tabindex="0" aria-label="游戏画面，方向键移动，空格放泡"></canvas>
+        <div id="kill-feed" aria-label="击杀记录" role="log"></div>
+        <div id="infection-alert" hidden><span>潜伏感染 · 即将转化</span><strong id="infection-countdown"></strong><div class="infection-track"><i id="infection-progress"></i></div><small id="infection-action"></small></div>
+        <div class="loading" id="loading"><b>正在加载游戏…</b><span id="load-progress">正在加载素材中...</span></div>
+        <section class="overlay" id="home-panel" hidden aria-label="游戏大厅">
+          <nav class="lobby-nav" aria-label="大厅功能">
+            <div class="nav-current" aria-current="page"><svg><use href="#icon-play"/></svg><span>对战</span></div>
+            <button id="career-open" disabled><svg><use href="#icon-user"/></svg><span>角色</span></button>
+            <button id="town-open"><svg><use href="#icon-room"/></svg><span>小镇</span></button>
+            <button id="guide-open"><svg><use href="#icon-book"/></svg><span>图鉴</span></button>
+
+          </nav>
+          <div class="hero-stage">
+            <div class="hero-heading"><h1>海王子<span id="hero-level">Lv.1</span></h1></div>
+            <div class="hero-world" aria-label="海王子角色展示">
+
+
+              <div class="hero-podium"></div><img class="hero-character" src="/assets/prince-portrait.png" alt="海王子">
+
+            </div>
+            <div class="hero-loadout"><div><span class="section-kicker">当前配置</span><strong id="hero-skill">疾风步 · Lv.1</strong></div><span id="career-summary">正在读取角色档案…</span></div>
+            <div class="hero-stats"><div><span>初始速度</span><b id="hero-speed">5.0</b></div><div><span>糖泡数量</span><b id="hero-capacity">2</b></div><div><span>爆炸威力</span><b id="hero-power">1</b></div></div>
           </div>
-        </div>
+          <aside class="launch-panel" aria-label="对战设置">
+            <div class="launch-heading"><div><h2>开始对战</h2><button id="rooms-open" class="gold-button">游戏大厅 · 浏览房间</button></div><div class="ruleset-switch" aria-label="游戏玩法"><button data-ruleset="classic" aria-pressed="true">经典抢包</button><button data-ruleset="boss" aria-pressed="false">首领挑战</button><button data-ruleset="bio" aria-pressed="false">生化生存</button><button data-ruleset="survivor" aria-pressed="false">幸存者</button><button data-ruleset="water11" aria-pressed="false">水面合作</button></div></div>
+            <label class="nickname-field" for="nickname">玩家昵称<input id="nickname" value="糖友" maxlength="12" autocomplete="off" spellcheck="false"></label>
+            <select id="map-select" aria-label="地图" hidden><option value="bun06_8">抢包山 6 · 红蓝对战</option><option value="water11_8">水面 11 · 海盗水手（1–5人合作）</option></select>
+            <button class="map-select-card" id="map-picker-open" aria-label="选择地图"><div class="map-art"><canvas id="map-preview" width="150" height="130" aria-hidden="true"></canvas><span class="map-change">切换地图</span></div><div class="map-card-copy"><b id="map-title">抢包山 6</b><p id="map-description">经典包房 · 绕路争夺</p></div></button>
+            <div id="bio-settings" hidden><label for="bio-level">感染者难度</label><select id="bio-level"><option value="easy">简单</option><option value="normal" selected>普通</option><option value="hard">困难</option></select><label for="bio-incubation">感染潜伏时间</label><select id="bio-incubation"><option value="8">8 秒</option><option value="12" selected>12 秒</option><option value="20">20 秒</option></select><p>开局三轮强化与 20 秒布防，母体从场内 AI 中产生。援助物资每 30 秒随机刷新，拾取后揭示内容。</p></div>
+            <div class="mode-switch" aria-label="对战模式"><button data-mode="ai" aria-pressed="true">人机挑战</button><button data-mode="online" aria-pressed="false">好友联机</button><button data-mode="practice" aria-pressed="false">自由练习</button></div>
+            <div id="mode-ai" class="mode-content"><label for="ai-level">对手难度</label><select id="ai-level"><option value="easy">简单 · 慢速反应</option><option value="normal" selected>普通 · 避险与拾取</option><option value="hard">困难 · 快速反应与追击</option></select><p>1 对 1 抢包，完成对局获得养成资源。</p><button class="gold-button launch-button" id="ai-play">开始对战 <svg><use href="#icon-arrow"/></svg></button></div>
+            <div id="mode-online" class="mode-content" hidden><p>创建房间后邀请好友加入。抢包地图支持 2–8 人，水面 11 支持 1–5 人合作。</p><button class="gold-button launch-button" id="create-room">创建联机房间 <svg><use href="#icon-arrow"/></svg></button><button class="secondary-link" id="rooms-shortcut">进入游戏大厅</button></div>
+            <div id="mode-practice" class="mode-content" hidden><p>独自熟悉地图、练习走位和穿泡。按 F2 打开训练菜单，不结算养成资源。</p><button class="gold-button launch-button" id="practice">进入单人练习场 <svg><use href="#icon-arrow"/></svg></button></div>
+            <p id="mode-compatibility" role="status" hidden></p><div class="launch-note"><span class="status-dot"></span><span id="lobby-count">正在连接大厅</span></div>
+          </aside>
+        </section>
         <div class="overlay room-panel" id="room-panel" hidden>
           <div class="window-title"><span>抢包山 6 · 等待开局</span><button class="close-button" id="leave-lobby" aria-label="离开房间">×</button></div>
           <div class="window-content">
             <div class="room-heading"><div><span class="eyebrow">房间号</span><strong id="room-number">000000</strong></div><button class="blue-button small" id="copy-invite">复制邀请</button></div>
             <div class="teams"><div><h3 class="red-heading">红队</h3><div id="red-roster"></div></div><div><h3 class="blue-heading">蓝队</h3><div id="blue-roster"></div></div></div>
-            <p id="room-hint" class="room-hint">等待糖友加入…</p>
+            <p id="room-hint" class="room-hint">等待玩家加入…</p>
             <div class="room-actions"><button class="blue-button" id="switch-team">切换队伍</button><button class="gold-button" id="ready-button">准备</button></div>
           </div>
         </div>
         <div class="overlay result-panel" id="result-panel" hidden>
-          <div class="window-title">本局结算</div><div class="window-content"><div id="result-title" class="result-title">红队获胜</div><p id="result-reason"></p><div id="result-stats"></div><button id="return-room" class="gold-button">返回房间</button></div>
+          <div class="window-title">本局结算</div><div class="window-content"><div id="result-title" class="result-title">红队获胜</div><p id="result-reason"></p><div id="result-stats"></div><p id="round-reward" role="status">对局结束后自动结算资源</p><button id="return-room" class="gold-button">返回房间</button><button class="practice-button" id="result-home">返回大厅 · 角色养成</button></div>
         </div>
         <button class="canvas-leave" id="leave-game" hidden>离开</button>
-        <div id="death-screen" hidden><span>你被击破了</span><strong id="respawn-count">10</strong><small>等待复活</small></div>
+        <div id="death-screen" hidden><span>角色已阵亡</span><strong id="respawn-count">10</strong><small>等待复活</small></div>
         <section id="chat-panel" class="chat-panel" aria-label="游戏聊天">
           <div id="chat-log" class="chat-log" aria-live="polite"></div>
           <form id="chat-form" hidden><span id="chat-scope">大厅</span><input id="chat-input" aria-label="聊天内容" maxlength="140" autocomplete="off" placeholder="回车发送，Esc 关闭"><button class="blue-button small" type="submit">发送</button></form>
@@ -83,11 +108,11 @@
       <div class="key-help"><kbd>↑ ↓ ← →</kbd><span>移动</span><kbd>空格</kbd><span>放泡</span><span class="wasd">也支持 WASD</span></div>
       <div class="toolbar-actions"><button id="sound-button" title="开启或关闭声音">声音：开</button><button id="help-button">玩法说明</button><button id="fullscreen-button">全屏</button></div>
     </div>
-    <footer><span id="footer-status">抢走对方全部包子并运回自己的包房，即可获胜。</span><span class="credit">QQ堂星空复刻版 - 仅用于学习和技术交流。</span></footer>
+    <footer><span id="footer-status">抢走对方全部包子并运回自己的包房，即可获胜。</span></footer>
   </main>
   <dialog id="help-dialog"><div class="window-title">玩法说明<button id="close-help" class="close-button" aria-label="关闭说明">×</button></div><div class="window-content">
-    <h2>带回对方的三个包子就赢</h2>
-    <p>进入对方包子房拿包子，再带回自己房内。抢齐敌方三个包子并带回即获胜。限时 4 分钟。</p>
+    <h2>胜利条件</h2>
+    <p>进入敌方包子房夺取包子，并运回己方包子房。成功夺取三个包子即可获胜，对局限时 4 分钟。</p>
     <h3>操作</h3>
     <p>方向键或 WASD 移动，空格放糖泡。糖泡约 3 秒引爆并炸开砖块。背包时减速，不能放泡。</p>
     <h3>道具与救援</h3>
@@ -106,8 +131,23 @@
       <label><input type="checkbox" data-mod="reveal">显示墙内道具</label>
       <label><input type="checkbox" data-mod="instant">放泡秒炸</label>
     </div>
-    <button id="training-win" class="gold-button">秒赢 · 来回搬包</button>
+    <button id="training-win" class="gold-button">完成训练对局</button>
   </div></dialog>
+  <section id="survivor-picks" hidden aria-label="局内强化选择"><header><div><p>幸存者 · 局内成长</p><h1 id="survivor-pick-title">选择强化</h1></div><button id="survivor-pick-leave" class="blue-button">退出对局</button></header><p id="survivor-pick-hint" role="status"></p><div id="survivor-options"></div><footer><button id="survivor-reroll" class="blue-button">重抽</button><p id="survivor-build"></p></footer></section>
+  <div id="combat-tools" hidden><button class="blue-button" id="skill-use">Q　技能</button><button class="blue-button" id="bio-antidote" hidden>4 解毒剂</button><span id="buff-status" role="status"></span><div id="bomb-tools" hidden><button id="cycle-bomb" class="blue-button">E 切换糖泡</button><button id="detonate-bomb" class="blue-button">R 遥控引爆</button><span id="bomb-description"></span></div></div>
+  <section id="career-dialog" class="lobby-page career-dialog" hidden aria-label="角色养成"><div class="window-title"><span>角色养成</span><button id="close-career" class="close-button" aria-label="关闭角色养成">返回大厅</button></div><div class="career-body">
+    <aside class="career-hero"><span class="section-kicker">当前角色</span><img src="/assets/prince-portrait.png" alt="海王子"><h2>海王子 <span id="career-level">Lv.1</span></h2><p id="career-record"></p><progress id="career-xp" max="100" value="0"></progress><small id="career-xp-label"></small><strong id="career-wallet"></strong><p id="career-equipped"></p></aside>
+    <div class="career-content"><div class="career-tabs" aria-label="养成分类"><button id="appearance-open">角色外观</button><button data-career-tab="attributes" aria-pressed="true">属性训练</button><button data-career-tab="skills" aria-pressed="false">技能配置</button></div>
+      <section id="career-attributes"><h3>基础属性强化</h3><p class="section-description">提升开局属性。阵亡后依然保留养成加成。</p><div id="attribute-cards" class="attribute-grid"></div></section>
+      <section id="career-skills" hidden><h3>角色技能配置</h3><p class="section-description">解锁并升级技能，每局携带一个。按 Q 释放。</p><div id="skill-cards" class="skill-grid"></div></section>
+      <p id="career-lock-note" class="career-note"></p><details class="save-details"><summary>资源获取与存档说明</summary><p>完成正式对局获得糖币、技能星和经验，胜利额外奖励。新档案赠送 60 糖币、3 技能星和疾风步。档案保存在本机服务中，同一浏览器自动恢复；清除站点数据后将创建新档案。</p></details>
+    </div>
+  </div></section>
+  <section id="maps-dialog" class="lobby-page modern-dialog" hidden aria-label="地图选择"><div class="window-title"><span>选择地图</span><button id="close-maps" class="close-button" aria-label="关闭地图选择">返回大厅</button></div><div class="window-content"><p class="section-description">选择对局地图，随后设置模式与难度。</p><div id="map-options"></div></div></section>
+  <section id="rooms-dialog" class="lobby-page modern-dialog" hidden aria-label="游戏大厅"><div class="window-title"><span>游戏大厅</span><button id="close-rooms" class="close-button" aria-label="关闭游戏大厅">返回对战</button></div><div class="window-content"><h3>公开房间</h3><div id="room-filters" class="ruleset-switch" aria-label="筛选房间模式"></div><p id="room-filter-count" role="status"></p><div class="public-rooms" id="public-rooms" aria-label="公开房间列表"></div><div class="room-create"><div><h2>创建房间</h2><p>选择地图后创建房间，再邀请好友加入。</p><label>模式 <select id="room-create-mode"><option value="classic">经典抢包</option><option value="boss">首领挑战</option><option value="bio">生化生存</option><option value="water11">水面合作</option><option value="survivor">幸存者</option></select></label><label>地图 <select id="room-create-map"></select></label><div id="room-bio-settings" hidden><label>感染者难度 <select id="room-bio-level"><option value="easy">简单</option><option value="normal" selected>普通</option><option value="hard">困难</option></select></label><label>感染潜伏时间 <select id="room-bio-incubation"><option value="8">8 秒</option><option value="12" selected>12 秒</option><option value="20">20 秒</option></select></label></div><p id="room-mode-compatibility" role="status"></p></div><button class="gold-button" id="room-create-button">创建房间</button></div><h2>通过房间号加入</h2><div class="join-row"><input id="room-code" placeholder="6 位房间号" inputmode="numeric" maxlength="6" aria-label="房间号"><button class="blue-button" id="join-room">加入</button></div></div></section>
+  <section id="guide-dialog" class="lobby-page career-dialog" hidden aria-label="道具图鉴"><div class="window-title"><span>图鉴收集</span><button id="close-guide" class="close-button" aria-label="关闭道具图鉴">返回大厅</button></div><div class="window-content"><h2 id="collection-summary">收集进度</h2><p>通过正式对局探索地图、拾取道具及击败敌人。结算后记录收集进度，每项奖励仅可领取一次。</p><div id="collection-milestones" class="skill-grid"></div><div class="collection-tabs"><button data-collection-filter="all" aria-pressed="true">全部</button><button data-collection-filter="item" aria-pressed="false">道具</button><button data-collection-filter="map" aria-pressed="false">地图</button><button data-collection-filter="enemy" aria-pressed="false">敌人</button></div><div id="collection-entries" class="collection-grid"></div><details class="guide-reference"><summary>道具与糖泡使用说明</summary><p>炸开砖块有机会掉落；新地图中央也有道具。拾取立即生效，阵亡或新一局后清除。</p><div id="item-guide" class="skill-grid"></div><h3>战术糖泡 · 首领与生化模式</h3><div id="bomb-guide" class="skill-grid"></div><p>空格放置糖泡，E 切换类型，R 引爆遥控糖泡。所有糖泡共用放置数量上限，放置后会阻挡移动。</p><p class="career-note">泡数、威力、速度与原有叉子、香蕉皮、笑脸道具仍然保留。</p></details></div></section>
+  <section id="appearance-dialog" class="lobby-page" hidden aria-label="角色设计"><div class="window-title"><span id="appearance-title">角色设计</span><button id="close-appearance" class="close-button">返回</button></div><div class="appearance-layout"><div class="appearance-preview"><img id="appearance-preview" alt="角色外观预览"><h2>外观预览</h2><div class="appearance-directions" aria-label="预览方向"><button data-preview-dir="3" aria-pressed="true">正面</button><button data-preview-dir="0" aria-pressed="false">右侧</button><button data-preview-dir="1" aria-pressed="false">背面</button><button data-preview-dir="2" aria-pressed="false">左侧</button></div><p>翅膀与坐骑为外观装扮，不改变移动速度或碰撞范围。</p><button id="appearance-random" class="blue-button">随机搭配</button><button id="appearance-save" class="gold-button">保存外观</button><button id="appearance-skip" class="blue-button">使用默认外观</button><p id="appearance-status" role="status"></p></div><div><div id="appearance-presets" aria-label="外观搭配方案"></div><div id="appearance-fields" class="appearance-fields"></div><details class="npc-reference"><summary>NPC 外观示例（7 种）</summary><div id="npc-gallery" class="npc-gallery"></div></details></div></div></section>
+  <section id="town-dialog" class="lobby-page" hidden aria-label="公共小镇"><div class="window-title"><span>糖泡小镇 <small id="town-count"></small></span><button id="close-town" class="close-button">返回对战</button></div><div class="town-layout"><div><canvas id="town-canvas" width="960" height="580" tabindex="0" aria-label="小镇地图，方向键移动，E 交互，点击地面移动"></canvas><div class="town-controls"><span>方向键 / WASD 移动 · 点击地面行走</span><button id="town-interact" class="gold-button">E 设施交互</button><button id="town-wave" class="blue-button">挥手</button></div><p id="town-hint" role="status">靠近建筑门口，与设施交互。</p></div><aside><h2>公共频道</h2><div id="town-chat" role="log" aria-live="polite"></div><form id="town-chat-form"><input id="town-chat-input" maxlength="140" aria-label="小镇聊天内容" placeholder="向小镇中的玩家发言"><button class="blue-button">发送</button></form></aside></div></section>
   <script type="module" src="/app.mjs"></script>
 </body></html>
 
