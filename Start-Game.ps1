@@ -1,14 +1,15 @@
-param([int]$Port = 8787, [switch]$NoBrowser)
+﻿param([int]$Port = 8787, [switch]$NoBrowser)
 $ErrorActionPreference = 'Stop'
 $taskRoot = $PSScriptRoot
 $taskLogRoot = Join-Path $taskRoot '.runtime'
 New-Item -ItemType Directory -Path $taskLogRoot -Force | Out-Null
 $taskNode = (Get-Command node -ErrorAction Stop).Source
 $taskUrl = "http://localhost:$Port"
+$taskProbeUrl = "http://127.0.0.1:$Port"
 $taskRunning = $false
 try {
-    $taskInfo = Invoke-RestMethod -Uri "$taskUrl/api/info" -TimeoutSec 2
-    $taskRunning = $taskInfo.game -eq 'qqt-star-remake'
+    $taskInfo = Invoke-RestMethod -Uri "$taskProbeUrl/api/info" -TimeoutSec 2
+    $taskRunning = $taskInfo.game -eq 'sugar-bubble-arena'
 } catch { }
 if (-not $taskRunning) {
     if (-not (Test-Path -LiteralPath (Join-Path $taskRoot 'node_modules/ws/package.json'))) {
@@ -22,9 +23,10 @@ if (-not $taskRunning) {
     Set-Content -LiteralPath (Join-Path $taskLogRoot 'server.pid') -Value $taskProcess.Id
     for ($taskAttempt = 0; $taskAttempt -lt 50; $taskAttempt++) {
         Start-Sleep -Milliseconds 100
-        try { $taskInfo = Invoke-RestMethod -Uri "$taskUrl/api/info" -TimeoutSec 1; $taskRunning = $taskInfo.game -eq 'qqt-star-remake'; if ($taskRunning) { break } } catch { }
+        if ($taskProcess.HasExited) { throw "Server exited. See $taskLogRoot/server-error.log" }
+        try { $taskInfo = Invoke-RestMethod -Uri "$taskProbeUrl/api/info" -TimeoutSec 3; $taskRunning = $taskInfo.game -eq 'sugar-bubble-arena'; if ($taskRunning) { break } } catch { }
     }
     if (-not $taskRunning) { throw "Server did not start. See $taskLogRoot/server-error.log" }
 }
-Write-Output "QQ Tang is running: $taskUrl"
+Write-Output "Sugar Bubble Arena is running: $taskUrl"
 if (-not $NoBrowser) { Start-Process $taskUrl }
