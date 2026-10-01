@@ -459,26 +459,31 @@ function decorateSheet(source, key, a) {
     if (a.wings) {
       c.save();
       if (side) {
-        c.translate(20, 0);
-        c.scale(0.6, 1);
+        // 侧向角色会遮住装饰中心，扩大横向范围后保留两侧翼尖。
+        drawPart(
+          c,
+          "butterfly",
+          key,
+          f,
+          -20,
+          -7 - lift + bob,
+          140,
+          100,
+          [0, "hue-rotate(-35deg) saturate(.65) brightness(1.2)", 0, "saturate(.2) brightness(1.5)", "sepia(.8) saturate(.9) brightness(1.2)"][a.wings],
+        );
+      } else {
+        drawPart(
+          c,
+          "butterfly",
+          key,
+          f,
+          0,
+          -7 - lift + bob,
+          100,
+          100,
+          [0, "hue-rotate(-35deg) saturate(.65) brightness(1.2)", 0, "saturate(.2) brightness(1.5)", "sepia(.8) saturate(.9) brightness(1.2)"][a.wings],
+        );
       }
-      drawPart(
-        c,
-        "butterfly",
-        key,
-        f,
-        0,
-        -7 - lift + bob,
-        100,
-        100,
-        [
-          0,
-          "hue-rotate(-35deg) saturate(.65) brightness(1.2)",
-          0,
-          "saturate(.2) brightness(1.5)",
-          "sepia(.8) saturate(.9) brightness(1.2)",
-        ][a.wings],
-      );
       c.restore();
     }
     if (a.mount) {
