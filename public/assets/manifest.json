@@ -1306,57 +1306,211 @@
     "frames": 1,
     "duration": 100
   },
-  "dress-butterfly": {
-    "src": "/assets/appearance/butterfly.png",
+  "wardrobe-accessory-1": {
+    "src": "/assets/appearance/wardrobe-accessory-1.svg",
     "w": 100,
     "h": 100,
     "frames": 28,
     "duration": 100
   },
-  "dress-owl": {
-    "src": "/assets/appearance/owl.png",
+  "wardrobe-accessory-2": {
+    "src": "/assets/appearance/wardrobe-accessory-2.svg",
     "w": 100,
     "h": 100,
     "frames": 28,
     "duration": 100
   },
-  "dress-helmet": {
-    "src": "/assets/appearance/helmet.png",
+  "wardrobe-accessory-3": {
+    "src": "/assets/appearance/wardrobe-accessory-3.svg",
     "w": 100,
     "h": 100,
     "frames": 28,
     "duration": 100
   },
-  "dress-ears": {
-    "src": "/assets/appearance/ears.png",
+  "wardrobe-accessory-4": {
+    "src": "/assets/appearance/wardrobe-accessory-4.svg",
     "w": 100,
     "h": 100,
     "frames": 28,
     "duration": 100
   },
-  "dress-circlet": {
-    "src": "/assets/appearance/circlet.png",
+  "wardrobe-accessory-5": {
+    "src": "/assets/appearance/wardrobe-accessory-5.svg",
     "w": 100,
     "h": 100,
     "frames": 28,
     "duration": 100
   },
-  "dress-crown": {
-    "src": "/assets/appearance/crown.png",
+  "wardrobe-accessory-6": {
+    "src": "/assets/appearance/wardrobe-accessory-6.svg",
     "w": 100,
     "h": 100,
     "frames": 28,
     "duration": 100
   },
-  "dress-staff": {
-    "src": "/assets/appearance/staff.png",
+  "wardrobe-accessory-7": {
+    "src": "/assets/appearance/wardrobe-accessory-7.svg",
     "w": 100,
     "h": 100,
     "frames": 28,
     "duration": 100
   },
-  "dress-pack": {
-    "src": "/assets/appearance/pack.png",
+  "wardrobe-wings-1": {
+    "src": "/assets/appearance/wardrobe-wings-1.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-wings-2": {
+    "src": "/assets/appearance/wardrobe-wings-2.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-wings-3": {
+    "src": "/assets/appearance/wardrobe-wings-3.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-wings-4": {
+    "src": "/assets/appearance/wardrobe-wings-4.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-back-1": {
+    "src": "/assets/appearance/wardrobe-back-1.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-back-2": {
+    "src": "/assets/appearance/wardrobe-back-2.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-back-3": {
+    "src": "/assets/appearance/wardrobe-back-3.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-back-4": {
+    "src": "/assets/appearance/wardrobe-back-4.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-held-1": {
+    "src": "/assets/appearance/wardrobe-held-1.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-held-2": {
+    "src": "/assets/appearance/wardrobe-held-2.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-held-3": {
+    "src": "/assets/appearance/wardrobe-held-3.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-held-4": {
+    "src": "/assets/appearance/wardrobe-held-4.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-shoes-1": {
+    "src": "/assets/appearance/wardrobe-shoes-1.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-shoes-2": {
+    "src": "/assets/appearance/wardrobe-shoes-2.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-shoes-3": {
+    "src": "/assets/appearance/wardrobe-shoes-3.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-mount-1": {
+    "src": "/assets/appearance/wardrobe-mount-1.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-mount-2": {
+    "src": "/assets/appearance/wardrobe-mount-2.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-mount-3": {
+    "src": "/assets/appearance/wardrobe-mount-3.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-mount-4": {
+    "src": "/assets/appearance/wardrobe-mount-4.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-aura-1": {
+    "src": "/assets/appearance/wardrobe-aura-1.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-aura-2": {
+    "src": "/assets/appearance/wardrobe-aura-2.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-aura-3": {
+    "src": "/assets/appearance/wardrobe-aura-3.svg",
+    "w": 100,
+    "h": 100,
+    "frames": 28,
+    "duration": 100
+  },
+  "wardrobe-aura-4": {
+    "src": "/assets/appearance/wardrobe-aura-4.svg",
     "w": 100,
     "h": 100,
     "frames": 28,

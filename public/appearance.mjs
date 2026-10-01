@@ -33,11 +33,11 @@ export const APPEARANCE_OPTIONS = {
   },
   wings: {
     label: "翅膀",
-    values: ["无翅膀", "冰蓝蝶翼", "暮紫蝶翼", "星辉蝶翼", "金辉蝶翼"],
+    values: ["无翅膀", "冰晶羽翼", "暮夜蝠翼", "星辉羽翼", "鎏金机械翼"],
   },
   back: {
     label: "背饰",
-    values: ["无背饰", "如意背饰", "旅行行囊", "金色如意", "蝶纹背饰"],
+    values: ["无背饰", "绯红披风", "旅行行囊", "星纹战旗", "蝶结背饰"],
   },
   held: {
     label: "手持装饰",
@@ -330,30 +330,6 @@ export function appearanceSheet(image, key, recipe = DEFAULT_APPEARANCE) {
         }
       }
     }
-    if (a.accessory) {
-      const part = [
-        "",
-        "circlet",
-        "helmet",
-        "crown",
-        "circlet",
-        "ears",
-        "circlet",
-        "helmet",
-      ][a.accessory];
-      const tint = { 1: 170, 4: 65, 6: 270, 7: 175 }[a.accessory] || 0;
-      drawPart(
-        c,
-        part,
-        key,
-        f,
-        x,
-        a.accessory === 5 ? -24 : a.accessory === 3 ? -22 : -8,
-        100,
-        100,
-        tint,
-      );
-    }
   }
   const decorated = decorateSheet(canvas, key, a);
   if (sheets.size > 48) sheets.clear();
@@ -364,7 +340,7 @@ export function hasLargeDecor(recipe) {
   return (
     ["wings", "back", "held", "shoes", "aura", "mount"].some(
       (k) => recipe?.[k] > 0,
-    ) || (recipe?.accessory || 0) >= 4
+    ) || (recipe?.accessory || 0) > 0
   );
 }
 export function portraitURL(image, recipe, key = "prince-red-stand-3") {
@@ -387,42 +363,35 @@ export function portraitURL(image, recipe, key = "prince-red-stand-3") {
   return c.toDataURL();
 }
 
-function drawPart(c, part, key, frame, x, y, w = 100, h = 100, hue = 0) {
-  const img = artwork.get("dress-" + part);
-  if (!img) return;
-  const match = key.match(/-(\d)$/),
-    dir = match ? Number(match[1]) : 3,
-    index = dir * 7 + (key.includes("walk") ? 1 + (frame % 6) : 0);
-  c.save();
-  if (hue) c.filter = typeof hue === "string" ? hue : `hue-rotate(${hue}deg)`;
-  c.drawImage(img, index * 100, 0, 100, 100, x, y, w, h);
-  c.restore();
+// Every option has a dedicated atlas: direction × (idle + six walking frames).
+// Slot rules apply to all item IDs. Coordinates are in the unmounted 100px cell.
+export const EQUIPMENT_LAYOUT = {
+  ridingLift: 8,
+  // right / back / left / front
+  backOffsetX: [0, 0, 0, -18],
+  heldOffsetX: [7, -7, -7, 7],
+  face: [[45, 48, 25, 15], null, [30, 48, 25, 15], [34, 48, 32, 15]],
+  frontLayers: ["aura", "mount", "wings", "back", "body", "shoes", "accessory", "held"],
+  rearLayers: ["aura", "mount", "wings", "body", "back", "shoes", "accessory", "held"],
+};
+
+function drawEquipment(c, slot, value, key, frame, x = 0, y = 0) {
+  if (!value) return;
+  const image = artwork.get(`wardrobe-${slot}-${value}`);
+  if (!image) return;
+  const direction = Number(key.match(/-(\d)$/)?.[1] ?? 3);
+  const index = direction * 7 + (key.includes("walk") ? 1 + frame % 6 : 0);
+  c.drawImage(image, index * 100, 0, 100, 100, x, y, 100, 100);
 }
-function drawItem(c, key, x, y, w, h, hue = 0) {
-  const img = artwork.get(key);
-  if (!img) return;
-  const sizes = {
-    item4: [39, 51],
-    item98: [41, 65],
-    item11: [35, 42],
-    item24: [27, 50],
-    item3: [40, 47],
-    item8: [40, 45],
-  };
-  const size = sizes[key] || [img.width, img.height];
-  c.save();
-  if (hue) c.filter = typeof hue === "string" ? hue : `hue-rotate(${hue}deg)`;
-  c.drawImage(img, 0, 0, size[0], size[1], x, y, w, h);
-  c.restore();
-}
+
 function decorateSheet(source, key, a) {
   if (!hasLargeDecor(a)) return source;
   const out = document.createElement("canvas");
   out.width = source.width;
   out.height = source.height;
-  const c = out.getContext("2d"),
-    back = key.endsWith("-1"),
-    side = key.endsWith("-0") || key.endsWith("-2");
+  const c = out.getContext("2d"), direction = Number(key.match(/-(\d)$/)?.[1] ?? 3);
+  const layout = EQUIPMENT_LAYOUT;
+  const layers = direction === 1 ? layout.rearLayers : layout.frontLayers;
   c.imageSmoothingEnabled = false;
   for (let f = 0; f < source.width / 100; f++) {
     c.save();
@@ -430,146 +399,26 @@ function decorateSheet(source, key, a) {
     c.beginPath();
     c.rect(0, 0, 100, 100);
     c.clip();
-    const bob = key.includes("walk") ? Math.sin((f * Math.PI) / 3) : 0,
-      lift = a.mount ? 10 : 0;
-    if (a.aura) {
-      c.save();
-      const colors = ["", "#ffdc83", "#ffad8d", "#9beaff", "#deb2ff"];
-      c.strokeStyle = colors[a.aura];
-      c.shadowColor = colors[a.aura];
-      c.shadowBlur = 4;
-      c.lineWidth = 1.5;
-      c.beginPath();
-      c.ellipse(50, 83, 27, 5, 0, 0, Math.PI * 2);
-      c.stroke();
-      c.restore();
-    }
-    if (a.back && !(a.back === 4 && a.wings))
-      drawPart(
-        c,
-        a.back === 2 ? "pack" : a.back === 4 ? "butterfly" : "staff",
-        key,
-        f,
-        a.back === 4 ? 4 : 0,
-        5 - lift,
-        92,
-        92,
-        a.back === 3 ? 40 : 0,
-      );
-    if (a.wings) {
-      c.save();
-      if (side) {
-        // 侧向角色会遮住装饰中心，扩大横向范围后保留两侧翼尖。
-        drawPart(
-          c,
-          "butterfly",
-          key,
-          f,
-          -20,
-          -7 - lift + bob,
-          140,
-          100,
-          [0, "hue-rotate(-35deg) saturate(.65) brightness(1.2)", 0, "saturate(.2) brightness(1.5)", "sepia(.8) saturate(.9) brightness(1.2)"][a.wings],
-        );
-      } else {
-        drawPart(
-          c,
-          "butterfly",
-          key,
-          f,
-          0,
-          -7 - lift + bob,
-          100,
-          100,
-          [0, "hue-rotate(-35deg) saturate(.65) brightness(1.2)", 0, "saturate(.2) brightness(1.5)", "sepia(.8) saturate(.9) brightness(1.2)"][a.wings],
-        );
+    const lift = a.mount ? layout.ridingLift : 0;
+    for (const slot of layers) {
+      if (slot === "body") {
+        c.drawImage(source, f * 100, 0, 100, source.height, 0, -lift, 100, source.height);
+        continue;
       }
-      c.restore();
-    }
-    if (a.mount) {
-      if (a.mount === 3) drawPart(c, "owl", key, f, 9, 35 + bob, 82, 70);
-      else
-        drawItem(
-          c,
-          ["", "item4", "item4", "", "item11"][a.mount],
-          28,
-          49 + bob,
-          44,
-          44,
-          a.mount === 2 ? 140 : 0,
-        );
-    }
-    c.drawImage(
-      source,
-      f * 100,
-      0,
-      100,
-      source.height,
-      0,
-      -lift,
-      100,
-      source.height,
-    );
-    // 骑乘姿态：原坐骑的前缘覆盖腿部，脸部与躯干保持清楚。
-    if (a.mount && a.mount !== 3 && !back) {
+      const x = slot === "back" ? layout.backOffsetX[direction]
+        : slot === "held" ? layout.heldOffsetX[direction] : 0;
+      const y = slot === "aura" || slot === "mount" ? 0 : -lift;
       c.save();
-      c.beginPath();
-      c.rect(23, 73 + bob, 54, 20);
-      c.clip();
-      drawItem(
-        c,
-        ["", "item4", "item4", "", "item11"][a.mount],
-        28,
-        49 + bob,
-        44,
-        44,
-        a.mount === 2 ? 140 : 0,
-      );
+      // Keep eyes, nose and mouth readable even for newly authored equipment.
+      const face = layout.face[direction];
+      if (face) {
+        c.beginPath();
+        c.rect(0, 0, 100, 100);
+        c.rect(face[0], face[1] - lift, face[2], face[3]);
+        c.clip("evenodd");
+      }
+      drawEquipment(c, slot, a[slot], key, f, x, y);
       c.restore();
-    }
-    if (a.shoes && !a.mount) {
-      drawItem(
-        c,
-        a.shoes === 2 ? "item3" : "item8",
-        36,
-        71,
-        15,
-        15,
-        a.shoes === 3 ? 160 : 0,
-      );
-      drawItem(
-        c,
-        a.shoes === 2 ? "item3" : "item8",
-        50,
-        71,
-        15,
-        15,
-        a.shoes === 3 ? 160 : 0,
-      );
-    }
-    if (a.held) {
-      if (a.held === 1 || a.held === 4)
-        drawPart(
-          c,
-          "staff",
-          key,
-          f,
-          29,
-          13 - lift,
-          80,
-          80,
-          a.held === 4 ? 160 : 0,
-        );
-      else
-        drawItem(
-          c,
-          "item24",
-          side ? 66 : 65,
-          45 - lift,
-          19,
-          32,
-          a.held === 3 ? 150 : 0,
-        );
     }
     c.restore();
   }
