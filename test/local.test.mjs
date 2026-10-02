@@ -152,3 +152,41 @@ test('local town chat accepts text and emotes, preserves history and stays town-
  session.receive({type:'town-leave'});session.receive({type:'chat',text:'outside'});
  assert.equal(packets.at(-1).type,'error');
 });
+
+
+test('friend gifts only commit after saving and duplicate requests never double charge',()=>{
+ const {session,packets}=fixture(),id='npc-easy';
+ session.receive({type:'friend-action',requestId:'gift-1',action:{type:'gift',id,gift:'candy'}});
+ const proposal=packets.at(-1);assert.equal(proposal.type,'friend-proposal');
+ assert.equal(session.profile.coins,60);assert.equal(proposal.save.coins,45);
+ session.receive({type:'friend-commit',requestId:'gift-1',success:false});assert.equal(session.profile.coins,60);
+ session.receive({type:'friend-action',requestId:'gift-2',action:{type:'gift',id,gift:'candy'}});
+ session.receive({type:'friend-commit',requestId:'gift-2',success:true});assert.equal(session.profile.coins,45);
+ session.receive({type:'friend-action',requestId:'gift-2',action:{type:'gift',id,gift:'candy'}});assert.equal(packets.at(-1).type,'error');assert.equal(session.profile.coins,45);
+ session.receive({type:'friend-action',requestId:'gift-3',action:{type:'gift',id,gift:'ribbon'}});assert.equal(packets.at(-1).type,'error');assert.equal(session.profile.coins,45);
+});
+test('friendship records survive export and old saves get an empty contact list',async()=>{
+ const {changeFriendship}=await import('../public/friendship.mjs');const p=freshProfile();
+ changeFriendship(p,{type:'gift',id:'npc-easy',gift:'tea'});
+ changeFriendship(p,{type:'gift',id:'npc-easy',gift:'candy'});
+ changeFriendship(p,{type:'settings',id:'npc-easy',alias:'小队员',relation:'friend'});
+ assert.deepEqual(validateSave(saveEnvelope(p)).social,p.social);
+ const old=freshProfile();delete old.social;assert.deepEqual(validateSave(saveEnvelope(old)).social.contacts,{});
+ assert.throws(()=>changeFriendship(p,{type:'relation',id:'npc-easy',value:'confidant'}));
+ assert.throws(()=>validateSave(saveEnvelope({...p,social:{nickname:'玩家',contacts:{bad:{}}}})));
+});
+test('friend chat affinity is capped per day and gifts cap at 200',async()=>{
+ const {changeFriendship}=await import('../public/friendship.mjs');const p=freshProfile(),action={type:'chat',id:'npc-easy'};
+ for(let i=0;i<20;i++)changeFriendship(p,action,Date.UTC(2026,9,2));assert.equal(p.social.contacts['npc-easy'].affinity,5);
+ changeFriendship(p,action,Date.UTC(2026,9,3));assert.equal(p.social.contacts['npc-easy'].affinity,6);
+ p.social.contacts['npc-easy'].affinity=199;changeFriendship(p,{type:'gift',id:'npc-easy',gift:'candy'});assert.equal(p.social.contacts['npc-easy'].affinity,200);
+ const before=p.coins;assert.throws(()=>changeFriendship(p,{type:'gift',id:'npc-easy',gift:'candy'}));assert.equal(p.coins,before);
+});
+
+
+test('player identity remains distinct even when nickname equals an NPC name',()=>{
+ const {session,packets}=fixture();session.profile.social.nickname='巡逻队员';session.receive({type:'town-enter'});
+ session.receive({type:'chat',text:'same name'});
+ assert.equal(packets.find(p=>p.type==='chat'&&p.text==='same name').kind,'player');
+ assert.ok(packets.some(p=>p.type==='chat'&&p.kind==='npc'));
+});

@@ -8,7 +8,7 @@ export function setupLocalSaveUI() {
   $('account-dialog').querySelector('.window-title span').textContent = '本地存档';
   $('account-dialog').querySelector('.window-content').innerHTML = `
     <h2>存档管理</h2><p>角色、装扮、养成资源与图鉴保存在当前浏览器，不会自动同步至其他设备。</p>
-    <p>清除浏览器数据或更换访问地址后，原存档不会自动恢复。请定期导出备份。</p>
+    <p>清除浏览器数据或更换访问地址后，原存档不会自动恢复。备份包含交友关系与昵称；聊天记录单独保存在本地数据库，不包含在此备份中。</p>
     <button id="save-export" class="gold-button">导出存档</button>
     <label class="field" style="margin-top:24px">导入存档文件<input id="save-import" type="file" accept=".json,application/json"></label>
     <p id="save-preview"></p><button id="save-confirm" class="blue-button" hidden>确认替换当前存档并重新进入</button>

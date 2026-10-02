@@ -1,3 +1,4 @@
+import { friendsUI } from './friends-ui.mjs';
 import { localMode } from "./local-profile.mjs";
 import { LocalConnection } from "./local-connection.mjs";
 import { enterGame } from "./entry-ui.mjs";
@@ -333,6 +334,7 @@ function connect() {
   socket.addEventListener("message", ({ data }) => {
     const msg = JSON.parse(data);
     town.message(msg);
+    friends.message(msg);
     if (msg.type === "hello") myId = msg.id;
     if (msg.type === "chat") {
       chatMessages.push(msg);
@@ -444,6 +446,7 @@ const career = careerUI(manifest, send, images, (id) => {
   return preview.toDataURL();
 });
 if (!localMode) { career.profile(entryProfile); delete document.body.dataset.entry; }
+const friends = friendsUI(send, images, entryProfile);
 connect();
 setInterval(() => {
   if (socket?.readyState === 1)

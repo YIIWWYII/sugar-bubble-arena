@@ -1,3 +1,4 @@
+import { freshSocial } from './friendship.mjs';
 import { DEFAULT_APPEARANCE, validateAppearance } from "./appearance.mjs";
 // 客户端展示与服务端校验共用的养成规则。
 export const ATTRIBUTES = {
@@ -130,6 +131,7 @@ export function freshProfile() {
     skills: { ward: 0, purify: 0, sprint: 1, shield: 0, rescue: 0, magnet: 0 },
     equipped: "sprint",
     receipts: [],
+    social: freshSocial(),
   };
 }
 export function publicProfile(profile) {

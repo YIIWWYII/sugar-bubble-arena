@@ -1,3 +1,4 @@
+import { FRIENDS, GIFTS, changeFriendship } from './friendship.mjs';
 import { TOWN, stepTown, townPath, createTownNPCs, tickTownNPC, talkTownNPC } from "./town.mjs";
 import { NPC_DESIGNS } from "./appearance.mjs";
 import { RULES } from "./engine.mjs";
@@ -27,8 +28,8 @@ export class LocalSession {
     if (full) { packet.blocks = this.match.blocks; packet.trapDuration = this.match.trapDuration; }
     this.emit(packet);
   }
-  addTownMessage(name,text) {
-    const packet={type:'chat',scope:'town',name,text,time:Date.now()};
+  addTownMessage(name,text,kind='player') {
+    const packet={type:'chat',scope:'town',id:crypto.randomUUID(),thread:'town',kind,name,text,time:Date.now()};
     this.townChat.push(packet);this.townChat=this.townChat.slice(-30);this.emit(packet);
   }
   start() {
@@ -69,6 +70,34 @@ export class LocalSession {
     catch (error) { this.emit({type:'error', message:error.message}); }
   }
   handle(msg) {
+    if (msg.type === 'friend-action') {
+      if(this.match)throw Error('请先退出对局再进行交友操作');
+      if(msg.requestId===this.lastFriendRequest)throw Error('该操作已经完成，请勿重复提交');
+      if(this.pendingFriend)throw Error('上一项操作正在保存，请稍候');
+      const action=msg.action || {},next=structuredClone(this.profile),entries=[],time=Date.now();
+      if(action.type==='chat' && (typeof action.text!=='string' || !action.text.trim() || action.text.length>140))throw Error('消息请输入 1–140 个字符');
+      changeFriendship(next,action,time);
+      const name=FRIENDS[action.id]?.name;
+      const entry=(kind,sender,text)=>entries.push({id:crypto.randomUUID(),thread:action.id,kind,sender,text,time:time+entries.length});
+      if(action.type==='chat'){
+        entry('player',next.social.nickname,action.text.trim());
+        const npc=this.townNPCs.find(n=>n.id===action.id);
+        if(talkTownNPC(this.townNPCs,npc,npc.id,time))entry('npc',name,npc.bubble);
+        else entry('npc',name,'我在听，慢慢说。');
+      }
+      if(action.type==='gift'){
+        entry('system','赠礼记录',`赠送${GIFTS[action.gift].name}，消耗 ${GIFTS[action.gift].coins} 糖币、${GIFTS[action.gift].gems} 技能星`);
+        entry('npc',name,'谢谢你送来的礼物，我会好好收下。');
+      }
+      this.pendingFriend={requestId:msg.requestId,profile:next};
+      return this.emit({type:'friend-proposal',requestId:msg.requestId,save:next,profile:publicProfile(next),entries});
+    }
+    if (msg.type === 'friend-commit') {
+      if(this.pendingFriend?.requestId!==msg.requestId)return;
+      if(msg.success){this.lastFriendRequest=msg.requestId;this.profile=this.pendingFriend.profile;if(this.town)this.town.name=this.profile.social.nickname;}
+      this.pendingFriend=null;return;
+    }
+    if(this.pendingFriend && ['profile-change','create'].includes(msg.type))throw Error('正在保存交友操作，请稍候');
     if (msg.type === 'ping') return this.emit({type:'pong', sent:msg.sent});
     if (msg.type === 'lobby') return this.emit({type:'lobby', online:0, rooms:[]});
     if (msg.type === 'join' || (msg.type === 'chat' && !this.town)) throw Error('暂未开放，敬请等待');
@@ -79,12 +108,12 @@ export class LocalSession {
       this.town.bubble=text;this.town.bubbleUntil=Date.now()+6000;
       this.addTownMessage(this.town.name,text);
       const npc=this.townNPCs.find(n=>Math.hypot(n.x-this.town.x,n.y-this.town.y)<105);
-      if(npc && talkTownNPC(this.townNPCs,this.town,npc.id,Date.now()))this.addTownMessage(npc.name,npc.bubble);
+      if(npc && talkTownNPC(this.townNPCs,this.town,npc.id,Date.now()))this.addTownMessage(npc.name,npc.bubble,'npc');
       return this.publish();
     }
     if (msg.type === 'town-enter') {
       if (this.match) throw Error('请先退出对局');
-      this.town = {...TOWN.spawn, name:String(msg.name || '糖友').slice(0,12), appearance:this.profile.appearance,dir:3,input:{x:0,y:0}};
+      this.town = {...TOWN.spawn, name:this.profile.social?.nickname || String(msg.name || '糖友').slice(0,12), appearance:this.profile.appearance,dir:3,input:{x:0,y:0}};
       this.emit({type:'town-history',messages:this.townChat});
       return this.publish();
     }
@@ -97,7 +126,7 @@ export class LocalSession {
       this.town.path=route || [];this.town.input={x:0,y:0};this.town.command=msg.command;
       this.emit({type:'town-target-result',command:msg.command,accepted:!!route});return this.publish();
     }
-    if (msg.type === 'town-talk' && this.town) { if(talkTownNPC(this.townNPCs,this.town,msg.npcId,Date.now())) { const npc=this.townNPCs.find(n=>n.id===msg.npcId);this.addTownMessage(npc.name,npc.bubble); } return this.publish(); }
+    if (msg.type === 'town-talk' && this.town) { if(talkTownNPC(this.townNPCs,this.town,msg.npcId,Date.now())) { const npc=this.townNPCs.find(n=>n.id===msg.npcId);this.addTownMessage(npc.name,npc.bubble,'npc'); } return this.publish(); }
     if (msg.type === 'town-emote' && this.town) {
       const near=this.townNPCs.find(n=>Math.hypot(n.x-this.town.x,n.y-this.town.y)<105);
       if(near)talkTownNPC(this.townNPCs,this.town,near.id,Date.now());

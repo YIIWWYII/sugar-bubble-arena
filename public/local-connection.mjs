@@ -1,3 +1,4 @@
+import { saveMessages, readMessages } from './social-db.mjs';
 import { readLocalProfile, writeLocalProfile } from './local-profile.mjs';
 
 export class LocalConnection extends EventTarget {
@@ -5,7 +6,26 @@ export class LocalConnection extends EventTarget {
   constructor(maps) {
     super();
     this.worker = new Worker(new URL('./local-worker.mjs', import.meta.url), {type:'module'});
-    this.worker.onmessage = ({data}) => {
+    const deliver = data => this.dispatchEvent(new MessageEvent('message',{data:JSON.stringify(data)}));
+    this.worker.onmessage = async ({data}) => {
+      if(data.type==='friend-proposal'){
+        try { writeLocalProfile(data.save,localStorage,false); }
+        catch {this.worker.postMessage({type:'friend-commit',requestId:data.requestId,success:false});deliver({type:'friend-result',requestId:data.requestId,error:'存档写入失败，赠礼及关系修改未生效，请检查浏览器存储权限。'});return;}
+        this.worker.postMessage({type:'friend-commit',requestId:data.requestId,success:true});
+        deliver({type:'profile',profile:data.profile});
+        let warning='';
+        try {if(data.entries.length)await saveMessages(data.entries);}
+        catch {warning='操作已生效，但聊天数据库写入失败。本次消息仅在当前页面显示，请勿重复赠礼。';}
+        deliver({type:'friend-result',requestId:data.requestId,profile:data.profile,entries:data.entries,warning});return;
+      }
+      if(data.type==='chat' && data.scope==='town'){
+        try {await saveMessages([{...data,sender:data.name}]);}
+        catch {deliver({type:'error',message:'小镇聊天记录保存失败，当前消息仍可查看。'});}
+      }
+      if(data.type==='town-history'){
+        try {data.messages=await readMessages('town');}
+        catch {deliver({type:'error',message:'无法读取本地聊天数据库，请检查浏览器存储权限。'});}
+      }
       if (data.type === 'hello') {
         this.readyState = 1;
         this.dispatchEvent(new Event('open'));

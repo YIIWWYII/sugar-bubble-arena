@@ -1,3 +1,4 @@
+import { validateSocial } from './friendship.mjs';
 import { freshProfile, publicProfile, ATTRIBUTES, SKILLS, COLLECTION, COLLECTION_MILESTONES } from './progression.mjs';
 import { validateAppearance } from './appearance.mjs';
 
@@ -26,6 +27,7 @@ export function validateSave(value) {
   }
   if (!Object.hasOwn(SKILLS, source.equipped) || !next.skills[source.equipped]) throw Error('存档已装备技能无效');
   next.equipped = source.equipped;
+  next.social = validateSocial(source.social);
   for (const key of ['collection', 'claimed', 'milestones']) {
     const allowed = key === 'milestones' ? COLLECTION_MILESTONES.map(m => m.count) : Object.keys(COLLECTION);
     if (!Array.isArray(source[key]) || source[key].length > allowed.length || source[key].some(v => !allowed.includes(v))) throw Error('存档图鉴数据无效');
@@ -41,13 +43,13 @@ export function readLocalProfile(storage = localStorage) {
   const raw = storage.getItem(LOCAL_SAVE_KEY);
   return raw === null ? freshProfile() : validateSave(JSON.parse(raw));
 }
-export function writeLocalProfile(profile, storage = localStorage) {
+export function writeLocalProfile(profile, storage = localStorage, rememberFailure = true) {
   const next = validateSave(saveEnvelope(profile));
   try {
     storage.setItem(LOCAL_SAVE_KEY, JSON.stringify(saveEnvelope(next)));
     if (typeof localStorage !== 'undefined' && storage === localStorage) unsavedProfile = null;
   } catch (error) {
-    if (typeof localStorage !== 'undefined' && storage === localStorage) unsavedProfile = next;
+    if (rememberFailure && typeof localStorage !== 'undefined' && storage === localStorage) unsavedProfile = next;
     throw error;
   }
   return publicProfile(next);

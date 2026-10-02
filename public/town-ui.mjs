@@ -140,7 +140,7 @@ export function townUI({
   const channel=$('town-chat').parentElement;
   if(localMode)channel.querySelector('h2').textContent='小镇聊天 · 本地';
   const note=document.createElement('p');note.className='town-chat-note';
-  note.textContent=localMode?'仅当前游戏可见，可与附近居民交流。刷新页面后聊天记录清空。':'与小镇中的玩家交流。';channel.querySelector('h2').after(note);
+  note.textContent=localMode?'仅本地可见，可与附近 NPC 交流。聊天保存在浏览器数据库中。':'与小镇中的玩家交流。';channel.querySelector('h2').after(note);
   const emotes=document.createElement('div');emotes.className='town-emotes';emotes.setAttribute('aria-label','小镇表情');
   for(const [icon,label] of [['👋','挥手'],['😊','开心'],['😂','大笑'],['👍','赞同'],['🎉','庆祝'],['☕','休息']]){
     const button=document.createElement('button');button.type='button';button.textContent=icon;button.title=label;button.setAttribute('aria-label',label);
@@ -161,7 +161,7 @@ export function townUI({
     for (const m of messages.slice(-30)) {
       const p = document.createElement("p"),
         b = document.createElement("b");
-      b.textContent = m.name + "：";
+      b.textContent = `${m.kind === "npc" ? "NPC" : localMode || m.player === id ? "玩家 · 你" : "玩家"} · ${m.name || m.sender}：`;
       p.append(b, document.createTextNode(m.text));
       if(Array.from(m.text).length<=3)p.classList.add("town-chat-emote");
       log.append(p);
@@ -257,7 +257,7 @@ export function townUI({
         );
       if(p.npc && p.activity && p.activity!=='散步')label(p.activity,p.x,p.y+28,'#486578',11);
       label(
-        p.name + (p.id === id ? " · 我" : ""),
+        p.name + (p.npc ? " · NPC" : p.id === id ? " · 玩家（你）" : " · 玩家"),
         p.x,
         p.y - 77,
         "#123c59",
@@ -311,7 +311,7 @@ export function townUI({
         chat();
       }
       if (m.type === "chat" && m.scope === "town") {
-        messages.push(m);
+        if(!messages.some(item=>item.id && item.id===m.id))messages.push(m);
         messages = messages.slice(-30);
         chat();
       }
