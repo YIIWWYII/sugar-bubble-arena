@@ -44,7 +44,7 @@ export class LocalSession {
     const player = this.match.players.find(p => p.id === this.id);
     const reward = roundReward(this.match, player, this.bot?.level);
     this.rewarded = true;
-    if (!reward) return;
+    if (!reward) { this.emit({type:'round-reward',reward:null}); return; }
     const next = structuredClone(this.profile);
     for (const key of ['coins', 'gems', 'xp']) next[key] += reward[key];
     next.matches++;

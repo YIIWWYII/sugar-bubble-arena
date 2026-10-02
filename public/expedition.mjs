@@ -14,13 +14,13 @@ export const BOMB_TYPES = Object.freeze({
   },
   shock: {
     name: "震退糖泡",
-    description: "十字冲击，击退两格并短暂眩晕；不会困住队友。",
+    description: "十字冲击，击退两格并短暂眩晕；首领击退一格，丧尸有控制抗性。",
     fuse: 1.6,
     color: "#ffb65e",
   },
   frost: {
     name: "冰冻糖泡",
-    description: "冻结命中的敌人 2.5 秒；不会困住队友。",
+    description: "冻结普通敌人 2.5 秒，首领 1.2 秒；丧尸按控制抗性缩短时间。",
     fuse: 2,
     color: "#85e7ff",
   },

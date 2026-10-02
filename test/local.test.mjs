@@ -53,7 +53,9 @@ test('practice earns no resources and invalid imports preserve the old save',() 
   const {session,packets}=fixture();
   session.receive({type:'create',mode:'classic',mapId:'bun06_8',practice:true});
   session.match.time=30;session.match.state='finished';session.match.winner=0;session.settle();
-  assert.ok(!packets.some(p=>p.type==='round-reward'));
+  session.settle();
+  assert.deepEqual(packets.filter(p=>p.type==='round-reward'),[{type:'round-reward',reward:null}]);
+  assert.equal(session.profile.coins,60);assert.equal(session.profile.matches,0);
   const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
   writeLocalProfile(freshProfile(),storage);
   const before=data.get(LOCAL_SAVE_KEY);
@@ -112,7 +114,7 @@ for(const [mode,mapId] of Object.entries({boss:'boss-court',bio:'bio-lab',surviv
     const {session,packets}=fixture();session.receive({type:'create',mode,mapId,practice:true});
     assert.ok(session.match);assert.equal(packets.find(p=>p.type==='error'),undefined);
     session.match.state='finished';session.match.time=60;session.match.winner=0;session.settle();
-    assert.ok(!packets.some(p=>p.type==='round-reward'));
+    assert.deepEqual(packets.filter(p=>p.type==='round-reward'),[{type:'round-reward',reward:null}]);
   });
 }
 

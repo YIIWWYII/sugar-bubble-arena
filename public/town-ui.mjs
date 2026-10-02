@@ -56,6 +56,7 @@ export function townUI({
   window.addEventListener("lobby-page-change", (e) => {
     const next = e.detail === "town-dialog" && (localMode || document.body.dataset.multiplayer !== "false");
     if (next && !active) {
+      local=null;players=[];npcs=[];renderedNPCs=[];poses.clear();near=null;nearNPC=null;
       active = true;
       send({ type: "town-enter", name: nickname() });
       canvas.focus();
@@ -315,6 +316,7 @@ export function townUI({
     message(m) {
       if (m.type === "hello") id = m.id;
       if (m.type === "town-state") {
+        if(!active)return;
         players = m.players;
         npcs = m.npcs || [];
         const self=players.find(p=>p.id===id);

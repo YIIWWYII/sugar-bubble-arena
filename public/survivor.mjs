@@ -300,10 +300,13 @@ export class SurvivorMatch extends ExpeditionMatch {
         cells.some((c) => Math.floor(e.x) === c.x && Math.floor(e.y) === c.y)
       ) {
         if (bomb.kind === "frost") {
-          e.frozenUntil = this.time + 2;
+          e.frozenUntil = this.time + (e.kind === "boss" ? 1.2 : 2.5);
           continue;
         }
-        if (bomb.kind === "shock") this.push(e, bomb);
+        if (bomb.kind === "shock") {
+          this.push(e, bomb, e.kind === "boss" ? 1 : 2);
+          e.stunUntil = this.time + 0.8;
+        }
         this.hit(e, 2 + (p.run.ranks.force || 0), p);
       }
   }
