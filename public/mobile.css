@@ -145,3 +145,5 @@ body[data-screen=home][data-lobby-page] .lobby-page:not([hidden]){position:relat
  .lobby-page>.lobby-nav{left:0;top:-76px;width:100%;flex-direction:row;gap:8px;padding:0}
  .lobby-page>.lobby-nav button{height:62px;flex:1;width:auto;flex-direction:row}
 }
+
+@media(min-width:801px){.lobby-page>.lobby-nav{position:fixed;left:max(32px,calc((100vw - 1480px)/2));top:112px;z-index:30}}
