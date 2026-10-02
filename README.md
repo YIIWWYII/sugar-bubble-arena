@@ -1,5 +1,13 @@
 # 糖泡对战
 
+**作者 / 二次开发与维护：王艺**
+
+官方仓库：https://github.com/YIIWWYII/sugar-bubble-arena
+
+官方游戏：https://yiiwwyii.github.io/sugar-bubble-arena/
+
+请以上述仓库及其提交记录核对开发来源。参考来源集中见 [NOTICE.md](NOTICE.md)，沿用代码和第三方素材的权利归属不变。
+
 浏览器运行的多模式游戏，包含经典抢包、首领挑战、生化生存、幸存者与水面合作，支持角色养成、道具组合和局内强化。
 
 使用 `启动游戏.cmd`，或运行 `npm ci`、`npm start`。Windows 启动脚本默认地址为 http://localhost:8787/。

@@ -1,3 +1,4 @@
+// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 export function touchControls({canPlay, move, bomb, action, chat}) {
   const root = document.getElementById('touch-controls');
   const pad = root.querySelector('.touch-pad');

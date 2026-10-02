@@ -1,3 +1,4 @@
+/* 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md */
 .app,dialog{cursor:url('/assets/cursor-fight.png') 1 1,auto}
 .app button,dialog button,.app select,dialog label{cursor:url('/assets/cursor-hand.png') 4 4,pointer}
 .app input,dialog input{cursor:text}

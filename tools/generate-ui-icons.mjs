@@ -1,3 +1,4 @@
+// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 const directory = new URL('../public/assets/ui/',import.meta.url);
 await mkdir(directory,{recursive:true});

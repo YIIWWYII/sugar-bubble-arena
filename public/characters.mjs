@@ -1,3 +1,4 @@
+// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 // Character identity is independent of cosmetic equipment and growth skills.
 export const CHARACTERS = {
   sea:{name:'海王子',role:'均衡守护',color:'#49bce8',speed:0,capacity:0,power:0,hp:0,fuse:3.001,bubble:'潮汐泡泡',trait:'均衡的速度与泡泡数量，适合初次出战。',skill:'潮汐庇护',description:'获得 2 秒护盾，解除减速与滑行。',cooldown:24,look:{hair:0,outfit:0,style:0,eyes:0,mouth:0}},

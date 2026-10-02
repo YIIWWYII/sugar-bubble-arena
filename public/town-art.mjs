@@ -1,3 +1,4 @@
+// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 import { TOWN, TOWN_BUILDINGS } from "./town.mjs";
 // 小镇只使用当前游戏已导入的场景图块；静态拼装结果缓存一次。
 export function bakeTown(images, manifest) {

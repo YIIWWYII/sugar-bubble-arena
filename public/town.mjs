@@ -1,3 +1,4 @@
+// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 // 小镇地形由客户端与服务端共用，移动及碰撞由服务端裁定。
 export const TOWN_RESIDENTS = {easy:'栗栗',normal:'青禾',hard:'星野',boss:'岩叔',runner:'小满'};
 export const TOWN = { width: 1280, height: 960, spawn: { x: 640, y: 570 } };

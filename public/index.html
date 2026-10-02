@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
+  <!-- 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md -->
+  <meta name="author" content="王艺">
+  <link rel="author" href="https://github.com/YIIWWYII/sugar-bubble-arena">
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#075f97">
   <title>糖泡对战 · 多模式联机游戏</title>
@@ -65,7 +68,7 @@
     <header class="topbar">
       <div class="brand"><span class="brand-mark">糖泡<span>对战</span></span></div><div id="lobby-wallet" class="lobby-wallet" aria-label="养成资源">正在读取档案</div>
       <button id="account-open" class="blue-button small">账号与存档</button><div class="connection"><span id="connection-dot"></span><span id="connection-label">连接中…</span><span id="latency">— ms</span></div>
-    </header>
+    <a class="developer-badge" href="https://github.com/YIIWWYII/sugar-bubble-arena" target="_blank" rel="noopener noreferrer" aria-label="作者王艺，查看官方 GitHub 项目"><strong>作者：王艺</strong><span>官方 GitHub ↗</span></a></header>
     <section class="game-frame" aria-label="糖泡对战游戏">
       <div class="game-stage" id="stage">
         <canvas id="game" width="800" height="600" tabindex="0" aria-label="游戏画面，方向键移动，空格放泡"></canvas>
@@ -194,6 +197,7 @@
 <button id="account-submit" class="gold-button" type="submit">注册并保存当前进度</button></form>
 <div id="account-recovery-result" hidden><p>恢复码仅在这里显示一次。忘记密码时可凭此设置新密码，请保存在安全的位置。</p><code id="account-recovery-code" style="display:block;overflow-wrap:anywhere;user-select:all;padding:16px;background:#fff"></code><button id="account-done" class="gold-button">已保存恢复码，返回游戏</button></div>
 <p id="account-status" role="status"></p><button id="account-logout" class="blue-button" hidden>退出账号</button></div></section>
+<footer id="developer-credit" aria-label="作者声明"><strong>糖泡对战 · 作者：王艺</strong><span>本项目开发与维护</span><a href="https://github.com/YIIWWYII/sugar-bubble-arena" target="_blank" rel="noopener noreferrer">官方 GitHub · YIIWWYII/sugar-bubble-arena ↗</a><a href="https://yiiwwyii.github.io/sugar-bubble-arena/" target="_blank" rel="noopener noreferrer">官方游戏地址 ↗</a><small>请通过以上官方链接核对项目来源。</small></footer>
   <script type="module" src="/app.mjs"></script>
   <script type="module" src="/account-ui.mjs"></script>
 </body></html>
