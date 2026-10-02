@@ -1,5 +1,6 @@
+import { TOWN_RESIDENTS } from './town.mjs';
 import { NPC_DESIGNS } from './appearance.mjs';
-export const FRIENDS = Object.fromEntries(Object.entries(NPC_DESIGNS).slice(0,5).map(([key,value])=>[`npc-${key}`,{...value,id:`npc-${key}`,kind:'npc'}]));
+export const FRIENDS = Object.fromEntries(Object.entries(NPC_DESIGNS).slice(0,5).map(([key,value])=>[`npc-${key}`,{...value,name:TOWN_RESIDENTS[key],id:`npc-${key}`,kind:'npc'}]));
 export const GIFTS = {
   candy:{name:'糖果小袋',coins:15,gems:0,affinity:5,icon:'🍬'},
   tea:{name:'暖茶礼盒',coins:40,gems:0,affinity:15,icon:'🍵'},

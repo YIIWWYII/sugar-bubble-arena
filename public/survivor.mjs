@@ -1,3 +1,4 @@
+import { characterHealth } from './characters.mjs';
 import { bubbleHit } from "./bubble-combat.mjs";
 import { ExpeditionMatch } from "./expedition.mjs";
 import { Match, RULES, DIR } from "./engine.mjs";
@@ -149,8 +150,8 @@ export class SurvivorMatch extends ExpeditionMatch {
         level: 1,
         xp: 0,
         nextXp: 6,
-        hp: 5,
-        maxHp: 5,
+        hp: characterHealth(p),
+        maxHp: characterHealth(p),
         ranks: {},
         offers: ["force", "frost", "chain"],
         offerId: ++this.serial,

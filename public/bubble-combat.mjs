@@ -1,11 +1,12 @@
+import { characterHealth } from './characters.mjs';
 import { Match } from "./engine.mjs";
 
 // 合作模式的生命与困泡规则；经典 Match 保持原样。
 export class BubbleMatch extends Match {
   spawn(p) {
     super.spawn(p);
-    p.hp = 5;
-    p.maxHp = 5;
+    p.hp = characterHealth(p);
+    p.maxHp = characterHealth(p);
     p.forks = 1;
     p.bananas = 2;
     p.smiles = 2;

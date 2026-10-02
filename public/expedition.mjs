@@ -1,3 +1,4 @@
+import { characterOf } from './characters.mjs';
 import { BubbleMatch, bubbleHit } from "./bubble-combat.mjs";
 import { mapForMode } from "./maps.mjs";
 import { NPC_DESIGNS } from "./appearance.mjs";
@@ -144,8 +145,8 @@ export class ExpeditionMatch extends BubbleMatch {
     }
     for (const p of this.players) {
       p.bombKind = "normal";
-      p.capacity = Math.max(3, p.capacity);
-      p.power = Math.max(2, p.power);
+      p.capacity = Math.max(3, p.capacity-characterOf(p.character).capacity)+characterOf(p.character).capacity;
+      p.power = Math.max(2, p.power-characterOf(p.character).power)+characterOf(p.character).power;
     }
   }
   enemy(kind, x, y, hp) {
@@ -194,7 +195,7 @@ export class ExpeditionMatch extends BubbleMatch {
     const b = this.bombs.at(-1),
       kind = Object.hasOwn(BOMB_TYPES, p.bombKind) ? p.bombKind : "normal";
     b.kind = kind;
-    b.explodeAt = this.time + BOMB_TYPES[kind].fuse;
+    b.explodeAt = this.time + (kind==='normal' ? characterOf(p.character).fuse : BOMB_TYPES[kind].fuse);
     b.support = ["shock", "frost", "barrier"].includes(kind);
     if (kind === "shock" || kind === "frost") b.power = Math.max(3, b.power);
     return true;

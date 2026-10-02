@@ -1,3 +1,4 @@
+import { characterHealth } from './characters.mjs';
 import { ExpeditionMatch } from "./expedition.mjs";
 import { Match, RULES } from "./engine.mjs";
 import { bubbleHit } from "./bubble-combat.mjs";
@@ -194,8 +195,8 @@ export class BioMatch extends ExpeditionMatch {
     Object.assign(p, {
       faction: "human",
       team: 0,
-      hp: 5,
-      maxHp: 5,
+      hp: characterHealth(p),
+      maxHp: characterHealth(p),
       antidotes: 1,
       infectedUntil: 0,
       infectedBy: null,

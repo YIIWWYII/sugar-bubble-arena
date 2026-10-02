@@ -1,3 +1,4 @@
+import { CHARACTERS, characterOf } from './characters.mjs';
 import {
   APPEARANCE_OPTIONS,
   APPEARANCE_PRESETS,
@@ -23,14 +24,14 @@ const lobbyPages = [
   "appearance-dialog",
   "town-dialog",
   "tea-dialog",
-  "friends-dialog",
   "account-dialog",
+  "manual-dialog",
 ];
 let pageOpener = null;
 let sharedNav;
 function syncNavigation(active) {
   if (!sharedNav) return;
-  const selection = active === 'friends-dialog' ? 'friends-open' : active === 'guide-dialog' ? 'guide-open' : ['town-dialog','tea-dialog'].includes(active) ? 'town-open' : ['career-dialog','appearance-dialog'].includes(active) ? 'career-open' : 'battle-open';
+  const selection = active === 'manual-dialog' ? 'manual-open' : active === 'guide-dialog' ? 'guide-open' : ['town-dialog','tea-dialog'].includes(active) ? 'town-open' : ['career-dialog','appearance-dialog'].includes(active) ? 'career-open' : 'battle-open';
   for (const button of sharedNav.querySelectorAll('button')) {
     button.classList.toggle('nav-current',button.id===selection);
     if(button.id===selection)button.setAttribute('aria-current','page');
@@ -43,6 +44,7 @@ function syncNavigation(active) {
 
 let firstDesignRequired = false;
 function renderLobbyPage(id) {
+  if (id === "friends-dialog") id = "town-dialog";
   if (firstDesignRequired) id = "appearance-dialog";
   const active =
     lobbyPages.includes(id) && document.body.dataset.screen === "home"
@@ -64,6 +66,7 @@ function renderLobbyPage(id) {
   window.scrollTo(0, 0);
 }
 export function openLobbyPage(id) {
+  if (id === "friends-dialog") id = "town-dialog";
   if (!lobbyPages.includes(id)) return;
   pageOpener = document.activeElement;
   history.pushState(
@@ -94,7 +97,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
   document.getElementById('battle-open').onclick = () => closeLobbyPage(true);
 
   const $ = (id) => document.getElementById(id);
-  const initialPage = `${location.hash.slice(1)}-dialog`;
+  const initialPage = location.hash === "#friends" ? "town-dialog" : `${location.hash.slice(1)}-dialog`;
   if (lobbyPages.includes(initialPage)) {
     history.replaceState(
       {
@@ -111,6 +114,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     entryDesign = false,
     savingAppearance = false,
     draft = { ...DEFAULT_APPEARANCE };
+  let draftCharacter = "sea";
   const portrait = (recipe) =>
     portraitURL(images.get("prince-red-stand-3"), recipe);
   let previewDirection = 3;
@@ -135,6 +139,19 @@ export function careerUI(manifest, send, images, mapThumbnail) {
       console.error('[外观预览] 生成失败:', e.message, e.stack);
     }
   }
+  function renderTemplates(){
+    $('character-templates').replaceChildren();
+    for(const [id,hero] of Object.entries(CHARACTERS)){
+      const button=document.createElement('button');button.type='button';button.className='character-template';button.setAttribute('aria-pressed',String(id===draftCharacter));
+      button.innerHTML=`<img src="${portrait({...DEFAULT_APPEARANCE,...hero.look})}" alt=""><div><strong>${hero.name}</strong><small>${hero.role}</small><p>速度 ${5+hero.speed} · 泡数 ${2+hero.capacity} · 威力 ${1+hero.power} · 生命 ${5+hero.hp}</p><p>${hero.trait}</p><p>F ${hero.skill} · ${hero.cooldown} 秒冷却<br>${hero.description}</p><span>${hero.bubble}</span></div>`;
+      button.onclick=()=>{draftCharacter=id;draft={...draft,...hero.look};renderTemplates();syncDraft();};$('character-templates').append(button);
+    }
+  }
+  for(const [id,template] of [['template-tab',true],['outfit-tab',false]])$(id).onclick=()=>{
+    $('character-templates').hidden=!template;$('outfit-panel').hidden=template;
+    $('template-tab').setAttribute('aria-pressed',String(template));$('outfit-tab').setAttribute('aria-pressed',String(!template));
+  };
+  renderTemplates();
   $("appearance-presets").innerHTML = Object.entries(APPEARANCE_PRESETS)
     .map(
       ([key, preset]) =>
@@ -166,6 +183,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     syncDraft();
   };
   function editAppearance() {
+    draftCharacter=profile?.character || "sea";renderTemplates();
     draft = entryDesign && !profile?.accountName
       ? { ...DEFAULT_APPEARANCE }
       : { ...DEFAULT_APPEARANCE, ...profile?.appearance };
@@ -223,7 +241,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
   };
   function saveAppearance(value) {
     if (
-      send({ type: "profile-change", action: { type: "appearance", value } })
+      send({ type: "profile-change", action: { type: "appearance", value, character:draftCharacter } })
     ) {
       savingAppearance = true;
       busy = true;
@@ -233,8 +251,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     }
   }
   $("appearance-save").onclick = () => saveAppearance(draft);
-  $("appearance-skip").onclick = () =>
-    saveAppearance({ ...DEFAULT_APPEARANCE });
+  $("appearance-skip").onclick = () => { draftCharacter="sea";saveAppearance({ ...DEFAULT_APPEARANCE }); };
   const icon = (key) => {
     const m = manifest[key],
       scale = Math.min(1, 40 / m.w, 46 / m.h);
@@ -267,6 +284,13 @@ export function careerUI(manifest, send, images, mapThumbnail) {
       : "正在读取角色档案…";
     $("career-open").disabled = !profile;
     if (!profile) return;
+    const hero=characterOf(profile.character),nickname=profile.social?.nickname || '糖友';
+    $('hero-player-name').textContent=nickname;$('hero-character-name').textContent=hero.name;
+    $('account-open').textContent=`${nickname} · 个人资料`;
+    $('town-profile-open').textContent=`${nickname} · 资料`;
+    $('nickname').value=nickname;
+    document.querySelector('.hero-world').setAttribute('aria-label',hero.name+'角色展示');
+    document.querySelector('.hero-character').alt=hero.name;
     const avatar = portrait(profile.appearance);
     document.querySelector(".hero-character").src = avatar;
     document
@@ -308,12 +332,12 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     );
     $("hero-level").textContent = `Lv.${profile.level}`;
     $("hero-skill").textContent =
-      `${SKILLS[profile.equipped].name} · Lv.${profile.skills[profile.equipped]}`;
-    $("hero-speed").textContent = (5 + profile.attributes.speed * 0.25)
+      `${hero.skill} · ${SKILLS[profile.equipped].name}`;
+    $("hero-speed").textContent = (5 + hero.speed + profile.attributes.speed * 0.25)
       .toFixed(2)
       .replace(/0$/, "");
-    $("hero-capacity").textContent = 2 + profile.attributes.capacity;
-    $("hero-power").textContent = 1 + profile.attributes.power;
+    $("hero-capacity").textContent = 2 + hero.capacity + profile.attributes.capacity;
+    $("hero-power").textContent = 1 + hero.power + profile.attributes.power;
     $("career-level").textContent = `Lv.${profile.level}`;
     $("career-record").textContent =
       `已完成 ${profile.matches} 局 · 获胜 ${profile.wins} 局`;
@@ -390,6 +414,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
   });
   $("guide-open").onclick = () => openLobbyPage("guide-dialog");
   $("close-guide").onclick = () => closeLobbyPage();
+  $("character-skill-use").onclick = () => send({type:"character-skill"});
   $("skill-use").onclick = () => send({ type: "skill" });
   // 控件与预览监听器就绪后再恢复地址栏指定的页面。
   if (lobbyPages.includes(initialPage)) renderLobbyPage(initialPage);
@@ -437,6 +462,10 @@ export function careerUI(manifest, send, images, mapThumbnail) {
         skill = p && SKILLS[p.skill];
       $("combat-tools").hidden = !inRoom || state.state !== "playing";
       if (!p) return;
+      const hero=characterOf(p.character),characterCooldown=Math.max(0,Math.ceil((p.characterReadyAt || 0)-state.time));
+      $('character-skill-use').hidden=p.faction==='zombie';
+      $('character-skill-use').textContent=`F ${hero.skill} ${characterCooldown ? characterCooldown+'s' : '可用'}`;
+      $('character-skill-use').disabled=characterCooldown>0 || p.status!=='alive';
       const cooldown = Math.max(
         0,
         Math.ceil((p.skillReadyAt || 0) - state.time),

@@ -1,3 +1,4 @@
+import { validateCharacter } from './characters.mjs';
 import { freshSocial } from './friendship.mjs';
 import { DEFAULT_APPEARANCE, validateAppearance } from "./appearance.mjs";
 // 客户端展示与服务端校验共用的养成规则。
@@ -132,10 +133,12 @@ export function freshProfile() {
     equipped: "sprint",
     receipts: [],
     social: freshSocial(),
+    character: "sea",
   };
 }
 export function publicProfile(profile) {
   const { receipts, ...data } = profile;
+  data.character = profile.character || "sea";
   data.appearance = { ...DEFAULT_APPEARANCE, ...profile.appearance };
   data.collection = profile.collection || [];
   data.claimed = profile.claimed || [];
@@ -202,7 +205,10 @@ export function changeProfile(profile, action) {
   profile.skills.ward ??= 0;
   profile.skills.purify ??= 0;
   if (action.type === "appearance") {
-    profile.appearance = validateAppearance(action.value);
+    const character = validateCharacter(action.character ?? profile.character);
+    const appearance = validateAppearance(action.value);
+    profile.character = character;
+    profile.appearance = appearance;
     profile.appearanceConfigured = true;
     return;
   }

@@ -190,3 +190,51 @@ test('player identity remains distinct even when nickname equals an NPC name',()
  assert.equal(packets.find(p=>p.type==='chat'&&p.text==='same name').kind,'player');
  assert.ok(packets.some(p=>p.type==='chat'&&p.kind==='npc'));
 });
+
+
+test('town identities match social contacts without renaming battle designs',async()=>{
+  const {FRIENDS}=await import('../public/friendship.mjs');
+  const {NPC_DESIGNS}=await import('../public/appearance.mjs');
+  const {session}=fixture();
+  assert.equal(new Set(session.townNPCs.map(n=>n.name)).size,5);
+  for(const npc of session.townNPCs){assert.equal(npc.name,FRIENDS[npc.id].name);assert.notEqual(npc.name,NPC_DESIGNS[npc.id.slice(4)].name);}
+});
+test('local item commands consume inventory and create the expected effects',()=>{
+  const {session}=fixture();session.receive({type:'create',mode:'classic',mapId:'bun06_8',practice:true});
+  const m=session.match,p=m.players.find(p=>p.id===session.id);m.state='playing';p.forks=1;p.bananas=1;p.smiles=1;
+  p.status='trapped';session.receive({type:'use-fork'});assert.equal(p.status,'alive');assert.equal(p.forks,0);
+  m.items=[];session.receive({type:'place-banana'});assert.equal(p.bananas,0);assert.equal(m.items.at(-1).kind,'banana-trap');
+  m.items=[];session.receive({type:'place-smile'});assert.equal(p.smiles,0);assert.equal(m.items.at(-1).kind,'smile-trap');
+});
+
+for(const mode of ['classic','boss','bio','survivor','water11']) {
+  test(`character templates affect stats, health, bubbles and skills in ${mode}`,async()=>{
+    const {CHARACTERS}=await import('../public/characters.mjs');
+    const ids={classic:'bun06_8',boss:'boss-court',bio:'bio-lab',survivor:'survivor-grove',water11:'water11_8'};
+    for(const [id,hero] of Object.entries(CHARACTERS)){
+      const {session}=fixture();session.profile.character=id;
+      session.receive({type:'create',mode,mapId:ids[mode],solo:true,aiLevel:mode==='classic'?'easy':undefined});
+      const m=session.match,p=m.players.find(p=>p.id===session.id);
+      assert.equal(p.character,id);assert.equal(p.speed,5+hero.speed);const expedition=['boss','bio','survivor'].includes(mode);assert.equal(p.capacity,(expedition?3:2)+hero.capacity);assert.equal(p.power,(expedition?2:1)+hero.power);
+      if(mode==='survivor'){assert.equal(p.run.maxHp,5+hero.hp);p.run.offers=[];}
+      else if(mode!=='classic')assert.equal(p.maxHp,5+hero.hp);
+      if(p.bioBuild){p.bioBuild.pending=0;p.bioBuild.offers=[];}
+      m.state='playing';m.time=10;
+      assert.equal(m.useCharacterSkill(p.id),true);assert.equal(m.useCharacterSkill(p.id),false);
+      assert.equal(p.characterReadyAt,10+hero.cooldown);
+      if(id==='star'){assert.equal(p.surgeUntil,16);assert.equal(p.magnetUntil,16);}
+      else if(id==='wind'){assert.equal(p.hasteUntil,14);assert.ok(p.shieldUntil>10);}
+      else assert.equal(p.shieldUntil,10+(id==='stone'?3:2));
+      assert.equal(m.placeBomb(p),true);const b=m.bombs.at(-1);assert.equal(b.character,id);assert.ok(Math.abs(b.explodeAt-10-hero.fuse)<0.0001);
+      p.faction='zombie';p.characterReadyAt=0;assert.equal(m.useCharacterSkill(p.id),false);
+    }
+  });
+}
+test('character choice survives saves while cosmetic edits cannot change its abilities',async()=>{
+  const {changeProfile}=await import('../public/progression.mjs');const p=freshProfile();
+  changeProfile(p,{type:'appearance',value:p.appearance,character:'stone'});
+  changeProfile(p,{type:'appearance',value:{...p.appearance,wings:2,mount:1}});
+  assert.equal(p.character,'stone');assert.equal(validateSave(saveEnvelope(p)).character,'stone');
+  const old=saveEnvelope(p);delete old.profile.character;assert.equal(validateSave(old).character,'sea');
+  assert.throws(()=>changeProfile(p,{type:'appearance',value:p.appearance,character:'unknown'}));
+});

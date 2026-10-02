@@ -1,4 +1,5 @@
 // 小镇地形由客户端与服务端共用，移动及碰撞由服务端裁定。
+export const TOWN_RESIDENTS = {easy:'栗栗',normal:'青禾',hard:'星野',boss:'岩叔',runner:'小满'};
 export const TOWN = { width: 1280, height: 960, spawn: { x: 640, y: 570 } };
 export const TOWN_BUILDINGS = [
   {
@@ -125,7 +126,7 @@ export function stepTown(p,dt) {
   if(!p.path.length){p.input={x:0,y:0};p.moving=false;}
 }
 export function createTownNPCs(appearances) {
-  return Object.entries(appearances).slice(0,5).map(([key,appearance],i)=>({id:`npc-${key}`,npc:true,name:appearance.name||'小镇居民',appearance,x:480+i*70,y:570,dir:3,input:{x:0,y:0},path:[],pauseUntil:0,routeIndex:i}));
+  return Object.entries(appearances).slice(0,5).map(([key,appearance],i)=>({id:`npc-${key}`,npc:true,name:TOWN_RESIDENTS[key] || '小镇居民',appearance,x:480+i*70,y:570,dir:3,input:{x:0,y:0},path:[],pauseUntil:0,routeIndex:i}));
 }
 const activities = [
   {x:480,y:360,name:'训练',line:'先练习走位，再放置糖泡。',duration:5500},

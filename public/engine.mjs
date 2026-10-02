@@ -1,3 +1,4 @@
+import { characterOf } from './characters.mjs';
 // Authoritative, deterministic gameplay. Distances are map cells, times seconds.
 import { SKILLS, TEMP_ITEMS } from "./progression.mjs";
 // Timing constants are research-derived calibration values, not recovered original code.
@@ -196,6 +197,7 @@ export class Match {
     const p = this.players.find((p) => p.id === id);
     if (!p || !profile) return;
     p.appearance = profile.appearance;
+    p.character = profile.character || "sea";
     p.build = {
       speed: profile.attributes.speed,
       capacity: profile.attributes.capacity,
@@ -205,13 +207,22 @@ export class Match {
     p.skillLevel = profile.skills[profile.equipped] || 0;
   }
   baseStat(p, kind) {
-    return RULES[kind] + (p.build?.[kind] || 0) * (kind === "speed" ? 0.25 : 1);
+    return RULES[kind] + (characterOf(p.character)[kind] || 0) + (p.build?.[kind] || 0) * (kind === "speed" ? 0.25 : 1);
   }
   movementSpeed(p) {
     return (
       (p.carry === null ? p.speed : RULES.carrySpeed) *
       (p.hasteUntil > this.time ? 1.35 : 1)
     );
+  }
+  useCharacterSkill(id) {
+    const p=this.players.find(p=>p.id===id);
+    if(this.state!=='playing' || !p || p.status!=='alive' || p.faction==='zombie' || this.paused?.() || (p.characterReadyAt || 0)>this.time)return false;
+    const hero=characterOf(p.character);
+    if(p.character==='star'){p.surgeUntil=Math.max(p.surgeUntil || 0,this.time+6);p.magnetUntil=Math.max(p.magnetUntil || 0,this.time+6);}
+    else if(p.character==='wind'){p.hasteUntil=Math.max(p.hasteUntil || 0,this.time+4);p.shieldUntil=Math.max(p.shieldUntil || 0,this.time+0.6);}
+    else{p.shieldUntil=Math.max(p.shieldUntil || 0,this.time+(p.character==='stone'?3:2));p.slowUntil=0;p.slideDir=null;}
+    p.characterReadyAt=this.time+hero.cooldown;this.event('skill',{player:id,key:'character',x:p.x,y:p.y});return true;
   }
   useSkill(id) {
     const p = this.players.find((p) => p.id === id),
@@ -389,6 +400,7 @@ export class Match {
         speed: this.baseStat(p, "speed"),
         lastBomb: -10,
         skillReadyAt: 0,
+        characterReadyAt: 0,
       });
       this.spawn(p);
     }
@@ -724,11 +736,12 @@ export class Match {
       owner: p.id,
       team: p.team,
       skin: p.skin,
+      character: p.character,
       power: this.trainingEnabled(p, "power") ? 32 : p.power,
       born: this.time,
       explodeAt:
         this.time +
-        (this.trainingEnabled(p, "instant") ? RULES.fuseInstant : RULES.fuse),
+        (this.trainingEnabled(p, "instant") ? RULES.fuseInstant : characterOf(p.character).fuse),
     };
     if (p.surgeUntil > this.time) {
       b.bonusPower = 2;

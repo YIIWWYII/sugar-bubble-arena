@@ -1,8 +1,10 @@
+import { CHARACTERS } from './characters.mjs';
+import { manualUI } from './manual-ui.mjs';
 import { friendsUI } from './friends-ui.mjs';
 import { localMode } from "./local-profile.mjs";
 import { LocalConnection } from "./local-connection.mjs";
 import { enterGame } from "./entry-ui.mjs";
-import { touchControls } from "./touch-controls.mjs";
+import { touchControls, landscapeControls } from "./touch-controls.mjs";
 import { townUI } from "./town-ui.mjs";
 import { MODE_MUSIC } from "./music.mjs";
 import { BIO_UPGRADES } from "./bio.mjs";
@@ -29,6 +31,7 @@ const releaseInfo = localMode ? {multiplayerEnabled:false} : await fetch('/api/i
 const multiplayerEnabled = releaseInfo.multiplayerEnabled === true;
 document.body.dataset.multiplayer = String(multiplayerEnabled);
 document.body.dataset.local = String(localMode);
+landscapeControls();
 const entryProfile = await enterGame();
 const $ = (id) => document.getElementById(id);
 const canvas = $("game"),
@@ -59,6 +62,8 @@ const selectedMaps = {
   roomMaps = {};
 let map = bunMap;
 const images = new Map();
+const characterBubbles = new Map();
+await Promise.all(Object.keys(CHARACTERS).map(id=>new Promise(resolve=>{const img=new Image();img.onload=()=>{characterBubbles.set(id,img);resolve();};img.onerror=resolve;img.src=`/assets/character-bubble-${id}.svg`;})));
 let loaded = 0;
 await Promise.all(
   Object.entries(manifest).map(
@@ -775,10 +780,11 @@ function updateUI() {
   $("result-panel").hidden = !finished;
   $("leave-game").hidden = lobby;
   const self = state.players.find((p) => p.id === myId);
-  for (const [action, field, label] of [['use-fork','forks','叉子'],['place-banana','bananas','香蕉'],['place-smile','smiles','笑脸']]) {
+  for (const [action, field, label] of [['use-fork','forks','1 叉子'],['place-banana','bananas','2 香蕉'],['place-smile','smiles','3 笑脸']]) {
     const button = document.querySelector(`[data-touch-action="${action}"]`);
     button.textContent = `${label} ${self?.[field] || 0}`;
-    button.disabled = !self?.[field];
+    button.disabled = !self?.[field] || (action==='use-fork' ? self?.status!=='trapped' : self?.status!=='alive') || (state.mode==='bio' && self?.faction==='zombie');
+    button.title = action==='use-fork' ? '被泡泡困住时使用叉子自救' : action==='place-banana' ? '在脚下放置香蕉陷阱' : '在脚下放置笑脸减速陷阱';
   }
   const expedition = EXPEDITION_MODES.includes(state.mode),
     water = state.mode === "water11" || expedition;
@@ -1081,14 +1087,7 @@ $("fullscreen-button").onclick = () => {
       .catch(() => toast("当前浏览器不支持全屏"));
   canvas.focus();
 };
-$("help-button").onclick = () => {
-  release();
-  $("help-dialog").showModal();
-};
-$("close-help").onclick = () => {
-  $("help-dialog").close();
-  canvas.focus();
-};
+manualUI(release,()=>canvas.focus());
 $("chat-form").onsubmit = (e) => {
   e.preventDefault();
   const message = $("chat-input").value.trim();
@@ -1219,6 +1218,7 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     send({ type: "bio-antidote" });
   }
+  if (e.code === "KeyF" && !e.repeat) { e.preventDefault();send({type:"character-skill"}); }
   if (e.code === "KeyQ" && !e.repeat) {
     e.preventDefault();
     send({ type: "skill" });
@@ -1919,7 +1919,9 @@ function render(now) {
             ? "bomb-fire"
             : "bomb1",
         m = manifest[key];
-      sprite(
+      const bubble = (!b.kind || b.kind==='normal') && characterBubbles.get(b.character);
+      if(bubble){const pulse=1+Math.sin(now/170)*.05;ctx.drawImage(bubble,OX+(b.x+.5)*T-20*pulse,OY+(b.y+.5)*T-20*pulse,40*pulse,40*pulse);}
+      else sprite(
         key,
         OX + (b.x + 0.5) * T - m.w / 2,
         OY + (b.y + 0.5) * T - m.h / 2 - (b.skin === "fire" ? 5 : 0),

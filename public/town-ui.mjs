@@ -1,7 +1,7 @@
 import { localMode } from "./local-profile.mjs";
 import { bakeTown } from "./town-art.mjs";
-import { TOWN, TOWN_BUILDINGS, stepTown, townPath, townEntrance, townClickedBuilding } from "./town.mjs";
-import { appearanceSheet } from "./appearance.mjs";
+import { TOWN, TOWN_RESIDENTS, TOWN_BUILDINGS, stepTown, townPath, townEntrance, townClickedBuilding } from "./town.mjs";
+import { appearanceSheet, NPC_DESIGNS } from "./appearance.mjs";
 export function townUI({
   send,
   images,
@@ -26,7 +26,7 @@ export function townUI({
   let lastFrame = 0,
     receivedAt = 0;
   const poses = new Map();
-  let local = null, command = 0, npcs = [], marker = null;
+  let local = null, command = 0, npcs = [], marker = null, renderedNPCs = [], selectedNPC = null;
   const vector = () => ({
     x:
       Number(held.has("d") || held.has("ArrowRight")) -
@@ -51,6 +51,7 @@ export function townUI({
     if (active && connected) send({ type: "town-move", x: 0, y: 0, command:++command });
   };
   $("town-open").onclick = () => openLobbyPage("town-dialog");
+  $("town-profile-open").onclick=()=>$("account-open").click();
   $("close-town").onclick = () => closeLobbyPage();
   window.addEventListener("lobby-page-change", (e) => {
     const next = e.detail === "town-dialog" && (localMode || document.body.dataset.multiplayer !== "false");
@@ -62,7 +63,7 @@ export function townUI({
       stop();
       send({ type: "town-leave" });
       active = false;
-      near=null; dismissedEntrance=null; $("town-entry").hidden=true;
+      closeNPCMenu(); near=null; dismissedEntrance=null; $("town-entry").hidden=true;
       players = [];
       local=null;poses.clear();npcs=[];
     }
@@ -77,10 +78,22 @@ export function townUI({
   $('town-entry-confirm').onclick = enterBuilding;
   $('town-entry-cancel').onclick = () => { dismissedEntrance=near?.name; $('town-entry').hidden=true; };
   for(const key of ['close-tea','tea-return'])$(key).onclick=()=>openLobbyPage('town-dialog');
-  function interact() {
-    if (near) { dismissedEntrance=null; $('town-entry').hidden=false; return; }
-    if (nearNPC) { stop(); send({type:'town-talk',npcId:nearNPC.id}); }
+  function closeNPCMenu(){selectedNPC=null;$('town-npc-menu').hidden=true;}
+  function showNPCMenu(npc){
+    stop();selectedNPC=npc.id;$('town-npc-name').textContent=npc.name;
+    $('town-npc-menu').hidden=false;
   }
+  $('town-npc-close').onclick=closeNPCMenu;
+  for(const button of document.querySelectorAll('[data-npc-action]'))button.onclick=()=>{
+    if(!selectedNPC)return;
+    window.dispatchEvent(new CustomEvent('town-npc-action',{detail:{id:selectedNPC,action:button.dataset.npcAction}}));
+    closeNPCMenu();
+  };
+  function interact() {
+    if(nearNPC){showNPCMenu(nearNPC);return;}
+    if (near) { dismissedEntrance=null; $('town-entry').hidden=false; }
+  }
+  window.addEventListener('keydown',e=>{if(e.key==='Escape' && !$('town-npc-menu').hidden){e.preventDefault();e.stopImmediatePropagation();closeNPCMenu();canvas.focus();}},true);
   $("town-interact").onclick = interact;
   $("town-wave").onclick = () => send({ type: "town-emote" });
   window.addEventListener("keydown", (e) => {
@@ -100,12 +113,13 @@ export function townUI({
     ) {
       e.preventDefault();
       target = null;
+      closeNPCMenu();
       if (!held.has(e.key)) {
         held.add(e.key);
         transmit();
       }
     }
-    if (e.key.toLowerCase() === "e") interact();
+    if (e.key.toLowerCase() === "e" && !e.repeat) { e.preventDefault();interact(); }
     if (e.key === "Enter") {
       $("town-chat-input").focus();
       e.preventDefault();
@@ -126,6 +140,9 @@ export function townUI({
       y: ((e.clientY - r.top - canvas.clientTop) / (canvas.clientHeight)) * canvas.height + camera.y,
     };
     if(!local || !connected) return;
+    const clickedNPC=[...renderedNPCs].reverse().find(p=>Math.abs(target.x-p.x)<=34 && target.y>=p.y-74 && target.y<=p.y+20);
+    if(clickedNPC){showNPCMenu(clickedNPC);return;}
+    closeNPCMenu();
     held.clear();
     const building=townClickedBuilding(target);
     if(building) { target=townEntrance(building); dismissedEntrance=null; }
@@ -161,7 +178,9 @@ export function townUI({
     for (const m of messages.slice(-30)) {
       const p = document.createElement("p"),
         b = document.createElement("b");
-      b.textContent = `${m.kind === "npc" ? "NPC" : localMode || m.player === id ? "玩家 · 你" : "玩家"} · ${m.name || m.sender}：`;
+      const legacyNPC=Object.entries(NPC_DESIGNS).find(([key,n])=>n.name===(m.name || m.sender));
+      const displayName=m.kind==='npc' && legacyNPC ? TOWN_RESIDENTS[legacyNPC[0]] : m.name || m.sender;
+      b.textContent = `${m.kind === "npc" ? "NPC" : localMode || m.player === id ? "玩家 · 你" : "玩家"} · ${displayName}：`;
       p.append(b, document.createTextNode(m.text));
       if(Array.from(m.text).length<=3)p.classList.add("town-chat-emote");
       log.append(p);
@@ -184,9 +203,10 @@ export function townUI({
   function draw(now) {
     requestAnimationFrame(draw);
     if (!active) return;
-    const mobile = innerWidth <= 800,
-      w = mobile ? 480 : 960,
-      h = mobile ? 440 : 580;
+    const mobile = matchMedia('(pointer:coarse)').matches || innerWidth <= 800,
+      landscape = mobile && innerWidth > innerHeight,
+      w = landscape ? 640 : mobile ? 480 : 960,
+      h = landscape ? 360 : mobile ? 440 : 580;
     canvas.style.aspectRatio = `${w}/${h}`;
     if (canvas.width !== w || canvas.height !== h) {
       canvas.width = w;
@@ -213,6 +233,7 @@ export function townUI({
       pose.y += (estimate.y - pose.y) * blend;
       return { ...p, x: pose.x, y: pose.y };
     });
+    renderedNPCs=visible.filter(p=>p.npc);
     const me = visible.find((p) => p.id === id);
     camera.x = Math.max(
       0,
@@ -278,11 +299,11 @@ export function townUI({
         )
       : null;
     if(!near || dismissedEntrance!==near.name) dismissedEntrance=null;
-    $('town-entry').hidden=!near || dismissedEntrance===near.name;
+    $('town-entry').hidden=!!selectedNPC || !near || dismissedEntrance===near.name;
     if(near) $('town-entry-title').textContent=`是否进入${near.name}？`;
     nearNPC=me ? visible.filter(p=>p.npc && Math.hypot(p.x-me.x,p.y-me.y)<90).sort((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)-Math.hypot(b.x-me.x,b.y-me.y))[0] : null;
     const button = $("town-interact"),
-      title = near ? `E 进入${near.name}` : nearNPC ? `E 与${nearNPC.name}交谈` : "E 设施交互";
+      title = nearNPC ? `E 与${nearNPC.name}互动` : near ? `E 进入${near.name}` : "E 角色 / 设施交互";
     button.disabled = !near && !nearNPC;
     if (button.textContent !== title) button.textContent = title;
     const count = localMode ? "· 单人漫游" : connected ? `· ${players.length} 人在线` : "· 连接已断开";

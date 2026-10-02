@@ -670,6 +670,11 @@ wss.on("connection", (ws, req) => {
         publish(room);
         return;
       }
+      if (msg.type === "character-skill") {
+        if(room.match.useCharacterSkill(ws.pid))publish(room);
+        else send(ws,{type:"error",message:"角色技能冷却中，或当前状态无法使用"});
+        return;
+      }
       if (msg.type === "skill") {
         if (room.match.useSkill(ws.pid)) publish(room);
         else

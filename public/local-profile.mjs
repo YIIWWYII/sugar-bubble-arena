@@ -1,3 +1,4 @@
+import { validateCharacter } from './characters.mjs';
 import { validateSocial } from './friendship.mjs';
 import { freshProfile, publicProfile, ATTRIBUTES, SKILLS, COLLECTION, COLLECTION_MILESTONES } from './progression.mjs';
 import { validateAppearance } from './appearance.mjs';
@@ -15,6 +16,7 @@ export function validateSave(value) {
     next[key] = source[key];
   }
   if (next.wins > next.matches) throw Error('存档对局记录无效');
+  next.character = validateCharacter(source.character);
   next.appearance = validateAppearance(source.appearance);
   if (typeof source.appearanceConfigured !== 'boolean') throw Error('存档角色设置无效');
   next.appearanceConfigured = source.appearanceConfigured;

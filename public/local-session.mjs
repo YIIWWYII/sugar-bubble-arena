@@ -155,7 +155,7 @@ export class LocalSession {
       this.settle();
       this.match = new Engine(selected, msg.practice === true, crypto.getRandomValues(new Uint32Array(1))[0], selected.mode === 'bio' ? validateBioOptions(msg.bioOptions) : {});
       this.bot = null;
-      this.match.addPlayer(this.id, String(msg.name || '糖友').trim().slice(0,12) || '糖友', 0);
+      this.match.addPlayer(this.id, this.profile.social?.nickname || '糖友', 0);
       this.match.setLoadout(this.id, publicProfile(this.profile));
       if (msg.aiLevel) this.bot = addBot(this.match, msg.aiLevel);
       this.emit({type:'joined', room:'单人', id:this.id, practice:this.match.practice});
@@ -176,6 +176,7 @@ export class LocalSession {
       case 'bio-antidote': match.useAntidote?.(this.id); break;
       case 'cycle-bomb': match.cycleBomb?.(this.id); break;
       case 'detonate': match.detonate?.(this.id); break;
+      case 'character-skill': if(!match.useCharacterSkill(this.id))throw Error('角色技能冷却中，或当前状态无法使用'); break;
       case 'skill': if (!match.useSkill(this.id)) throw Error('技能冷却中，或当前状态无法使用'); break;
       case 'use-fork': match.useFork(this.id); break;
       case 'place-banana': match.placeBanana(this.id); break;

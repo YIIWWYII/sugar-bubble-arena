@@ -3,16 +3,17 @@ import { readLocalProfile, writeLocalProfile, saveEnvelope, validateSave } from 
 
 export function setupLocalSaveUI() {
   const $ = id => document.getElementById(id);
-  $('account-open').textContent = '本地存档';
-  $('account-dialog').setAttribute('aria-label','本地存档');
-  $('account-dialog').querySelector('.window-title span').textContent = '本地存档';
+  $('account-open').textContent = '个人资料';
+  $('account-dialog').setAttribute('aria-label','个人资料');
+  $('account-dialog').querySelector('.window-title span').textContent = '个人资料';
   $('account-dialog').querySelector('.window-content').innerHTML = `
-    <h2>存档管理</h2><p>角色、装扮、养成资源与图鉴保存在当前浏览器，不会自动同步至其他设备。</p>
+    <div id="personal-social"></div><p id="friend-self-status" role="status"></p><h2>存档管理</h2><p>角色、装扮、养成资源与图鉴保存在当前浏览器，不会自动同步至其他设备。</p>
     <p>清除浏览器数据或更换访问地址后，原存档不会自动恢复。备份包含交友关系与昵称；聊天记录单独保存在本地数据库，不包含在此备份中。</p>
     <button id="save-export" class="gold-button">导出存档</button>
     <label class="field" style="margin-top:24px">导入存档文件<input id="save-import" type="file" accept=".json,application/json"></label>
     <p id="save-preview"></p><button id="save-confirm" class="blue-button" hidden>确认替换当前存档并重新进入</button>
     <p id="save-status" role="status"></p>`;
+  const social=document.getElementById('social-profile-settings');social.hidden=false;$('personal-social').append(social);
   document.querySelector('.save-details p').textContent = '完成正式对局获得糖币、技能星和经验，胜利额外奖励。新档案赠送 60 糖币、3 技能星和疾风步。档案保存在当前浏览器，可通过本地存档导出、导入备份；暂不提供账号和跨设备同步。';
   let pending;
   const open = () => {
