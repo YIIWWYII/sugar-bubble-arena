@@ -1,4 +1,4 @@
-/* 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md */
+/* 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md */
 .app,dialog{cursor:url('/assets/cursor-fight.png') 1 1,auto}
 .app button,dialog button,.app select,dialog label{cursor:url('/assets/cursor-hand.png') 4 4,pointer}
 .app input,dialog input{cursor:text}
@@ -32,7 +32,7 @@ body,button,input,select{font-family:'Fusion Pixel','Microsoft YaHei',sans-serif
 .map-preview b{color:#225b80;font-size:14px}.map-preview p{margin:4px 0;font-size:12px}.map-preview small{font-size:10px;color:#52768b}
 #home-panel{width:460px;max-height:96%;scrollbar-width:thin}
 #home-panel .window-content{padding:16px 20px}#home-panel .public-rooms{min-height:65px;max-height:95px}#home-panel .empty-lobby{margin:10px 0}
-#home-panel .divider{margin:12px 0}#guide-open{width:100%;margin-top:8px}
+#home-panel .divider{margin:12px 0}
 .career-dialog{width:min(820px,94vw);max-height:90vh}.career-dialog .window-title{position:sticky;top:0;z-index:2}.career-dialog .window-content{padding:20px}
 .career-hero{display:flex;align-items:center;gap:14px;padding:4px 14px 16px;border-bottom:1px solid #9dc9dc}
 .career-hero img{width:90px;height:90px;object-fit:contain;image-rendering:pixelated;background:radial-gradient(ellipse,#fff5b8,transparent 70%)}

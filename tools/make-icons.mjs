@@ -1,4 +1,4 @@
-// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
+// 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 // 从一张源图生成站点图标（favicon / apple-touch-icon）。
 // 用箱式采样做降采样：对每个目标像素取源图对应区域的平均色，
 // 比最近邻平滑得多，适合细节丰富的图缩到 32px 这种场景。

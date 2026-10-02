@@ -1,4 +1,4 @@
-// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
+// 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 import { TOWN_RESIDENTS } from './town.mjs';
 import { NPC_DESIGNS } from './appearance.mjs';
 export const FRIENDS = Object.fromEntries(Object.entries(NPC_DESIGNS).slice(0,5).map(([key,value])=>[`npc-${key}`,{...value,name:TOWN_RESIDENTS[key],id:`npc-${key}`,kind:'npc'}]));

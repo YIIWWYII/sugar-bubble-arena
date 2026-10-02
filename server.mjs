@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
+// 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 import { NPC_DESIGNS } from "./public/appearance.mjs";
 import { TOWN, stepTown, townPath, createTownNPCs, tickTownNPC, talkTownNPC } from "./public/town.mjs";
 import { BioMatch } from "./public/bio.mjs";

@@ -1,4 +1,4 @@
-/* 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md */
+/* 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md */
 /* 局外界面独立于 800×600 的对局画布。 */
 :root{--lobby-ink:#24506c;--lobby-muted:#5989a4;--lobby-blue:#116c9b;--lobby-paper:#e8f8ff;--lobby-line:#8ad3e9;--lobby-gold:#ffdc65}
 .icon-defs{position:absolute;width:0;height:0;overflow:hidden}

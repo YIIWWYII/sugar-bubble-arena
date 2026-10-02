@@ -1,4 +1,4 @@
-// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
+// 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 // Native mapElem offsets locate the tile anchor inside the source image.
 export function waterElementPosition(object, tileSize = 40) {
   return {

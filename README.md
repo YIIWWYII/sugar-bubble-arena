@@ -1,6 +1,6 @@
 # 糖泡对战
 
-**作者 / 二次开发与维护：王艺**
+**作者 / 二次开发与维护：WY**
 
 官方仓库：https://github.com/YIIWWYII/sugar-bubble-arena
 

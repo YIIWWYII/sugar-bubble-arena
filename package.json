@@ -2,7 +2,7 @@
   "name": "sugar-bubble-arena",
   "version": "0.6.0",
   "private": true,
-  "author": { "name": "王艺", "url": "https://github.com/YIIWWYII" },
+  "author": { "name": "WY", "url": "https://github.com/YIIWWYII" },
   "repository": { "type": "git", "url": "https://github.com/YIIWWYII/sugar-bubble-arena.git" },
   "homepage": "https://yiiwwyii.github.io/sugar-bubble-arena/",
   "type": "module",

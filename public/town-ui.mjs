@@ -1,4 +1,4 @@
-// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
+// 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 import { localMode } from "./local-profile.mjs";
 import { bakeTown } from "./town-art.mjs";
 import { TOWN, TOWN_RESIDENTS, TOWN_BUILDINGS, stepTown, townPath, townEntrance, townClickedBuilding } from "./town.mjs";

@@ -4,7 +4,7 @@
 
 ## 本项目开发者
 
-糖泡对战的二次开发与维护作者为 **王艺**。官方仓库为 https://github.com/YIIWWYII/sugar-bubble-arena 。开发者署名适用于本项目修改和新增内容，不替代下述第三方代码及素材的权利声明。
+糖泡对战的二次开发与维护作者为 **WY**。官方仓库为 https://github.com/YIIWWYII/sugar-bubble-arena 。开发者署名适用于本项目修改和新增内容，不替代下述第三方代码及素材的权利声明。
 
 ## 代码 —— MIT
 

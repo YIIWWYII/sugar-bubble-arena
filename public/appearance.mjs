@@ -1,4 +1,4 @@
-// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
+// 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 // 玩家编辑、服务端校验与 NPC 配方共用有限选项。
 export const APPEARANCE_OPTIONS = {
   hair: {

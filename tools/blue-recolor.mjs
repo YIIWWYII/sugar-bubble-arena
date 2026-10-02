@@ -1,4 +1,4 @@
-// 糖泡对战 | 二次开发与维护：王艺 | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
+// 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 // 把角色精灵里的红色（头发/配饰）替换成蓝色，用于生成蓝队版本的共享美术。
 // 皮肤是暖色（绿通道明显高于蓝），纯红是 g≈b，据此区分。
 import { decodePng, encodePng, pixel, setPixel } from './png-util.mjs';
