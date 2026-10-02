@@ -22,9 +22,12 @@ const lobbyPages = [
   "guide-dialog",
   "appearance-dialog",
   "town-dialog",
+  "account-dialog",
 ];
 let pageOpener = null;
+let firstDesignRequired = false;
 function renderLobbyPage(id) {
+  if (firstDesignRequired) id = "appearance-dialog";
   const active =
     lobbyPages.includes(id) && document.body.dataset.screen === "home"
       ? id
@@ -143,7 +146,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     syncDraft();
   };
   function editAppearance() {
-    draft = entryDesign
+    draft = entryDesign && !profile?.accountName
       ? { ...DEFAULT_APPEARANCE }
       : { ...DEFAULT_APPEARANCE, ...profile?.appearance };
     previewDirection = 3;
@@ -377,10 +380,12 @@ export function careerUI(manifest, send, images, mapThumbnail) {
       busy = false;
       render();
       if (savingAppearance) {
+        firstDesignRequired = false;
         savingAppearance = false;
         $("appearance-status").textContent = "外观已保存";
         closeLobbyPage(true);
-      } else if (firstProfile) {
+      } else if (firstProfile && !profile.appearanceConfigured) {
+        firstDesignRequired = true;
         entryDesign = true;
         $("close-appearance").textContent = "确认并进入";
         $("appearance-save").textContent = "保存并进入大厅";
@@ -401,7 +406,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     },
     reward(value) {
       $("round-reward").textContent = value
-        ? `本局获得：${value.coins} 糖币 · ${value.gems} 技能星 · ${value.xp} 经验（已保存）`
+        ? `本局获得：${value.coins} 糖币 · ${value.gems} 技能星 · ${value.xp} 经验（${value.saved === false ? "尚未保存，请导出备份" : "已保存"}）`
         : "本局不发放养成资源：练习、提前离开或不足 15 秒的对局不计入。";
     },
     resetReward() {

@@ -1,0 +1,104 @@
+/* Touch layouts retain the game's blue windows, gold actions and pixel artwork. */
+#touch-controls{display:none}
+@media(any-pointer:coarse),(max-width:900px){
+  button{touch-action:manipulation}
+  input,select,textarea{font-size:16px!important}
+  .app,body[data-screen="home"] .app{width:calc(100% - 20px);margin:0 auto;padding-top:env(safe-area-inset-top)}
+  .topbar,body[data-screen="home"] .topbar{height:auto;min-height:64px;gap:8px;flex-wrap:wrap;padding:10px 0}
+  .brand-mark,body[data-screen="home"] .brand-mark{font-size:24px}
+  #account-open{margin-left:auto;min-height:44px}
+  .lobby-wallet{order:3;flex:1;margin:0!important;flex-wrap:wrap}
+  .connection{order:4;font-size:11px}
+  #home-panel button,.lobby-page button,.toolbar-actions button,#room-panel button{min-height:44px}
+  .lobby-page,#account-dialog{width:calc(100% - 20px)!important;margin:12px auto!important;min-width:0}
+  .lobby-page .window-title{font-size:18px!important;padding:12px!important;gap:8px}
+  .lobby-page .window-content{padding:16px!important}
+  #rooms-dialog .room-create>div{grid-template-columns:1fr}
+  #rooms-dialog select{max-width:100%;width:100%}
+  .appearance-preview{gap:8px;padding:12px}
+  .appearance-preview>img,.appearance-preview>img.decorated{width:140px;height:140px}
+  .appearance-preview>p{font-size:12px}
+  #appearance-presets{gap:6px}
+  .appearance-group{gap:10px;padding:10px}
+  #touch-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0 max(12px,env(safe-area-inset-bottom));color:#ddf5ff;user-select:none;-webkit-user-select:none}
+  .touch-pad{display:grid;grid-template:repeat(3,46px)/repeat(3,46px);gap:3px;flex:none;touch-action:none}
+  .touch-pad button,.touch-items button{background:#c6eaf7;border:2px solid #4c9bc6;color:#155386;font:16px 'Fusion Pixel',sans-serif;border-radius:4px;min-width:0}
+  .touch-pad [data-dir=up]{grid-area:1/2}.touch-pad [data-dir=left]{grid-area:2/1}.touch-pad [data-dir=right]{grid-area:2/3}.touch-pad [data-dir=down]{grid-area:3/2}
+  .touch-pad span{grid-area:2/2;align-self:center;text-align:center;font-size:12px;color:#b3d7eb}
+  .touch-pad .held{background:#ffdf67;border-color:#c49219}
+  .touch-actions{flex:1;max-width:300px;min-width:0;display:flex;flex-wrap:wrap;gap:8px}
+  .touch-primary{display:flex;gap:8px;width:100%}.touch-primary button{min-height:56px;padding:8px;flex:1;touch-action:none}
+  #touch-bomb{flex:1.5;font-size:16px}
+  .touch-items{display:flex;gap:6px;flex-wrap:wrap;width:100%}.touch-items button{min-height:40px;padding:6px;font-size:12px;flex:1 0 60px;white-space:normal;overflow-wrap:anywhere}
+  #touch-chat{min-height:40px;padding:6px 12px}.touch-note{font-size:11px;line-height:1.5;flex:1;align-self:center}
+  body[data-screen=game] #combat-tools,body[data-screen=game] .key-help{display:none!important}
+  body[data-screen=game] .game-toolbar{padding:4px 0;justify-content:center}
+  body[data-screen=game] .game-stage{aspect-ratio:4/3;min-height:0}
+  #game{touch-action:none;image-rendering:pixelated}
+  .canvas-leave{min-height:32px;letter-spacing:0;font-size:12px;bottom:3%}
+  #room-panel,#result-panel{position:relative;inset:auto;transform:none;width:100%;max-height:none;margin:0}
+  body:is([data-screen=lobby],[data-screen=result]) .game-stage{aspect-ratio:auto;min-height:440px;height:auto;overflow:visible}
+  body:is([data-screen=lobby],[data-screen=result]) #game{position:absolute;visibility:hidden}
+  body[data-screen=result] #leave-game{display:none}
+  body[data-screen=lobby] #chat-panel,body[data-screen=result] #chat-panel{position:relative;inset:auto;width:100%}
+  #chat-form{flex-wrap:wrap;background:#dff6ff;padding:6px}#chat-input{flex:1;min-width:100px}
+  #chat-panel{max-width:100%}#chat-form button{min-height:40px}
+  #kill-feed{font-size:10px;max-width:48%}
+  #survivor-picks{max-height:65dvh}
+  body[data-picking=true] #touch-controls{opacity:.35}
+  #town-canvas{aspect-ratio:1/1}#town-interact{font-size:14px}
+}
+@media(max-width:560px){
+  body[data-screen=home] .game-stage{height:auto;min-height:0}
+  #home-panel{position:relative;inset:auto;transform:none;height:auto;gap:12px}
+  .lobby-nav{position:sticky;top:0;z-index:4;background:#0b3655;padding:8px 0}
+  .launch-panel{padding:14px 12px}.launch-heading{gap:8px}.ruleset-switch{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .ruleset-switch button{font-size:12px!important;min-width:0}
+  .mode-switch button{font-size:12px;padding:8px 4px}
+  .hero-stage{margin-bottom:12px}
+  .town-layout{padding:8px}.town-controls span{font-size:12px}
+  #maps-dialog #map-options{gap:8px}#maps-dialog .map-option canvas{height:100px}
+}
+@media(max-height:540px) and (orientation:landscape) and (max-width:1100px){
+  body[data-screen=game] .app{width:100%;padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+  body[data-screen=game] .topbar,body[data-screen=game] .game-toolbar,body[data-screen=game] .app>footer{display:none}
+  body[data-screen=game] .game-frame{width:min(calc((100dvh - 12px)*4/3),calc(100% - 300px));margin:6px auto;padding:0}
+  body[data-screen=game] #touch-controls{position:fixed;inset:0;pointer-events:none;padding:12px;align-items:center}
+  .touch-pad{grid-template:repeat(3,42px)/repeat(3,42px);gap:2px}
+  body[data-screen=game] .touch-pad,body[data-screen=game] .touch-actions{pointer-events:auto}
+  .touch-actions{flex:none;width:140px}.touch-note{display:none}.touch-primary{flex-wrap:wrap}.touch-primary button{min-height:48px}
+  body[data-picking=true] #touch-controls{pointer-events:none}body[data-picking=true] #touch-controls *{pointer-events:none}
+}
+
+@media(any-pointer:coarse),(max-width:900px){
+  #touch-skill{font-size:12px;line-height:1.6;white-space:normal}
+  .touch-items button:disabled{opacity:.45;cursor:default}
+}
+@media(max-height:540px) and (orientation:landscape) and (max-width:1100px){
+  .touch-primary{flex-direction:column}.touch-primary button{flex:none!important;width:100%}
+  #touch-skill{min-height:40px}#touch-bomb{min-height:58px}
+}
+/* Login precedes both character creation and lobby navigation. */
+body[data-entry=login]>:not(#entry-screen):not(script):not(noscript){display:none!important}
+body[data-entry=loading] .lobby-page{display:none!important}
+#entry-screen{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:32px max(16px,env(safe-area-inset-left)) max(24px,env(safe-area-inset-bottom));font-family:'Fusion Pixel','Microsoft YaHei',sans-serif}
+.entry-brand{font-size:36px;color:#fff;text-shadow:3px 3px #062139}.entry-brand span{color:#ffdf67}
+.entry-card{width:min(420px,100%);border:3px solid #77c7e2;box-shadow:6px 6px #062139;color:#16446a}
+.entry-card h1{font-size:24px;margin:0 0 12px}.entry-card p{font-size:13px;line-height:1.8}
+.entry-card input{font-size:16px;width:100%}.entry-card .field{margin-top:18px}
+#entry-submit,#entry-guest,#entry-done{width:100%;min-height:48px;margin-top:10px;font:16px 'Fusion Pixel',sans-serif}
+.entry-links{display:flex;justify-content:space-between;margin-top:12px;gap:8px}.entry-links button{border:0;background:none;color:#246a91;min-height:44px;font:14px 'Fusion Pixel',sans-serif;padding:8px}
+.entry-note{color:#51758c}.entry-card #entry-status{margin-bottom:0;color:#8b4327;min-height:24px}
+#entry-recovery-code{display:block;overflow-wrap:anywhere;user-select:all;background:#fff;padding:12px}
+@media(max-height:650px){#entry-screen{justify-content:flex-start;gap:14px;padding-top:20px}}
+
+/* Canvas intrinsic dimensions and its displayed ratio must stay identical. */
+#town-canvas{display:block;box-sizing:content-box;width:calc(100% - 6px);height:auto!important;max-width:calc(100% - 6px);object-fit:contain}
+.town-layout>div{align-self:start}
+
+.multiplayer-notice{display:none}
+body[data-multiplayer=false] .multiplayer-notice{display:block;padding:24px 16px;color:#245570;line-height:1.8}
+body[data-multiplayer=false] #mode-online>:not(.multiplayer-notice),body[data-multiplayer=false] #rooms-dialog>.window-content,body[data-multiplayer=false] #town-dialog>.town-layout,body[data-multiplayer=false] #chat-panel,body[data-multiplayer=false] #touch-chat{display:none!important}
+body[data-multiplayer=false] #mode-online .multiplayer-notice{padding:10px 0}
+
+body[data-entry=save]>:not(#account-dialog):not(script){display:none!important}

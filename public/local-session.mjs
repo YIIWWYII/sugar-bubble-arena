@@ -1,0 +1,119 @@
+import { Match } from './engine.mjs';
+import { ExpeditionMatch, validateBioOptions } from './expedition.mjs';
+import { BioMatch } from './bio.mjs';
+import { SurvivorMatch } from './survivor.mjs';
+import { WaterMatch } from './water11.mjs';
+import { BOT_LEVELS, addBot, tickBot } from './bots.mjs';
+import { mapForMode } from './maps.mjs';
+import { changeProfile, publicProfile, roundReward, COLLECTION } from './progression.mjs';
+
+// Same message contract and engines as the hosted game, with one local player.
+export class LocalSession {
+  constructor(maps, profile, emit) {
+    this.maps = maps;
+    this.profile = profile;
+    this.emit = emit;
+    this.id = 'local-player';
+  }
+  publish(full = false) {
+    if (!this.match) return;
+    const packet = {type:'state', room:'单人', host:this.id, aiLevel:this.bot?.level, ...this.match.snapshot()};
+    if (full) { packet.blocks = this.match.blocks; packet.trapDuration = this.match.trapDuration; }
+    this.emit(packet);
+  }
+  start() {
+    this.settle();
+    this.match.setLoadout(this.id, publicProfile(this.profile));
+    this.match.start();
+    this.rewarded = false;
+    this.emit({type:'round-start'});
+  }
+  settle() {
+    if (!this.match || this.rewarded || this.match.state !== 'finished') return;
+    const player = this.match.players.find(p => p.id === this.id);
+    const reward = roundReward(this.match, player, this.bot?.level);
+    this.rewarded = true;
+    if (!reward) return;
+    const next = structuredClone(this.profile);
+    for (const key of ['coins', 'gems', 'xp']) next[key] += reward[key];
+    next.matches++;
+    if (reward.won) next.wins++;
+    const discoveries = [`map:${this.match.map.id}`, ...(player.discoveries || [])];
+    if (this.bot && reward.won) discoveries.push('enemy:bot');
+    for (const key of discoveries) if (Object.hasOwn(COLLECTION, key) && !next.collection.includes(key)) next.collection.push(key);
+    this.profile = next;
+    this.emit({type:'round-reward', reward, profile:publicProfile(next), save:next});
+  }
+  tick() {
+    if (!this.match) return;
+    if (this.bot) tickBot(this.match, this.bot);
+    this.match.tick();
+    this.settle();
+  }
+  receive(msg) {
+    try { this.handle(msg); }
+    catch (error) { this.emit({type:'error', message:error.message}); }
+  }
+  handle(msg) {
+    if (msg.type === 'ping') return this.emit({type:'pong', sent:msg.sent});
+    if (msg.type === 'lobby') return this.emit({type:'lobby', online:0, rooms:[]});
+    if (msg.type === 'join' || msg.type === 'chat' || msg.type.startsWith('town-')) throw Error('暂未开放，敬请等待');
+    if (msg.type === 'profile-change') {
+      if (this.match) throw Error('请先退出对局再修改角色');
+      const next = structuredClone(this.profile);
+      changeProfile(next, msg.action || {});
+      this.profile = next;
+      return this.emit({type:'profile', profile:publicProfile(next), save:next});
+    }
+    if (msg.type === 'leave') {
+      this.settle(); this.match = null; this.bot = null;
+      return this.emit({type:'left'});
+    }
+    if (msg.type === 'create') {
+      const source = this.maps.get(msg.mapId);
+      if (!source) throw Error('没有找到这张地图');
+      const selected = mapForMode(source, msg.mode ?? 'classic');
+      if (msg.aiLevel !== undefined && (!Object.hasOwn(BOT_LEVELS, msg.aiLevel) || selected.mode !== 'classic' || msg.practice)) throw Error('请选择有效的经典人机难度');
+      if (!msg.practice && !msg.aiLevel && !(msg.solo === true && selected.mode !== 'classic')) throw Error('暂未开放，敬请等待');
+      const Engine = {classic:Match, boss:ExpeditionMatch, bio:BioMatch, survivor:SurvivorMatch, water11:WaterMatch}[selected.mode];
+      if (!Engine) throw Error('模式不存在');
+      this.settle();
+      this.match = new Engine(selected, msg.practice === true, crypto.getRandomValues(new Uint32Array(1))[0], selected.mode === 'bio' ? validateBioOptions(msg.bioOptions) : {});
+      this.bot = null;
+      this.match.addPlayer(this.id, String(msg.name || '糖友').trim().slice(0,12) || '糖友', 0);
+      this.match.setLoadout(this.id, publicProfile(this.profile));
+      if (msg.aiLevel) this.bot = addBot(this.match, msg.aiLevel);
+      this.emit({type:'joined', room:'单人', id:this.id, practice:this.match.practice});
+      this.start();
+      return this.publish(true);
+    }
+    const match = this.match;
+    if (!match) return;
+    if (msg.type === 'survivor-pick' || msg.type === 'survivor-reroll') {
+      const ok = msg.type === 'survivor-pick' ? match.choose?.(this.id,msg.key,msg.offerId) : match.reroll?.(this.id,msg.offerId);
+      if (!ok) throw Error('强化选择已更新，请选择当前选项');
+      return this.publish();
+    }
+    if (msg.type === 'return' && match.state === 'finished') { this.start(); return this.publish(true); }
+    if (match.paused?.()) return;
+    switch (msg.type) {
+      case 'input': match.setInput(this.id,msg); return;
+      case 'bio-antidote': match.useAntidote?.(this.id); break;
+      case 'cycle-bomb': match.cycleBomb?.(this.id); break;
+      case 'detonate': match.detonate?.(this.id); break;
+      case 'skill': if (!match.useSkill(this.id)) throw Error('技能冷却中，或当前状态无法使用'); break;
+      case 'use-fork': match.useFork(this.id); break;
+      case 'place-banana': match.placeBanana(this.id); break;
+      case 'place-smile': match.placeTrap(this.id,'smile'); break;
+      case 'training-mod': if (match.practice) match.setTrainingMod(this.id,msg.key,msg.enabled); break;
+      case 'training-win': if (match.practice) match.beginTrainingWin(this.id); break;
+      case 'drill': if (match.practice && ['map','phase','run','wall','wall3','pillar','house'].includes(msg.mode)) match.setupDrill(this.id,msg.mode); break;
+      case 'emote': {
+        const p = match.players.find(p => p.id === this.id);
+        if (match.state === 'playing' && p.status === 'alive' && /^[tyuiop]$/.test(msg.key)) { p.emote = msg.key; p.emoteUntil = match.time + 3; }
+        break;
+      }
+    }
+    this.publish();
+  }
+}

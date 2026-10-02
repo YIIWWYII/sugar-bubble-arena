@@ -7,7 +7,7 @@ test("static assets revalidate without a body and HEAD preserves metadata", asyn
   const port = 18895;
   const server = spawn(process.execPath, ["server.mjs"], {
     cwd: new URL("..", import.meta.url),
-    env: { ...process.env, PORT: String(port) },
+    env: { ...process.env, PORT: String(port), PUBLIC_ORIGIN: "" },
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
   });

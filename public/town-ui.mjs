@@ -1,5 +1,5 @@
 import { bakeTown } from "./town-art.mjs";
-import { TOWN, TOWN_BUILDINGS, moveTown } from "./town.mjs";
+import { TOWN, TOWN_BUILDINGS, stepTown, townPath } from "./town.mjs";
 import { appearanceSheet } from "./appearance.mjs";
 export function townUI({
   send,
@@ -25,6 +25,7 @@ export function townUI({
   let lastFrame = 0,
     receivedAt = 0;
   const poses = new Map();
+  let local = null, command = 0, npcs = [], marker = null;
   const vector = () => ({
     x:
       Number(held.has("d") || held.has("ArrowRight")) -
@@ -34,17 +35,24 @@ export function townUI({
       Number(held.has("w") || held.has("ArrowUp")),
   });
   const transmit = () => {
-    if (active && connected) send({ type: "town-move", ...vector() });
+    if (active && connected) {
+      marker=null;
+      command++;
+      if(local){local.path=[];local.input=vector();}
+      send({ type: "town-move", ...vector(), command });
+    }
   };
   const stop = () => {
     held.clear();
     target = null;
-    if (active && connected) send({ type: "town-move", x: 0, y: 0 });
+    if(local){local.path=[];local.input={x:0,y:0};local.moving=false;}
+    marker=null;
+    if (active && connected) send({ type: "town-move", x: 0, y: 0, command:++command });
   };
   $("town-open").onclick = () => openLobbyPage("town-dialog");
   $("close-town").onclick = () => closeLobbyPage();
   window.addEventListener("lobby-page-change", (e) => {
-    const next = e.detail === "town-dialog";
+    const next = e.detail === "town-dialog" && document.body.dataset.multiplayer !== "false";
     if (next && !active) {
       active = true;
       send({ type: "town-enter", name: nickname() });
@@ -54,6 +62,7 @@ export function townUI({
       send({ type: "town-leave" });
       active = false;
       players = [];
+      local=null;poses.clear();npcs=[];
     }
   });
   function interact() {
@@ -106,9 +115,17 @@ export function townUI({
   canvas.addEventListener("pointerdown", (e) => {
     const r = canvas.getBoundingClientRect();
     target = {
-      x: ((e.clientX - r.left) / r.width) * canvas.width + camera.x,
-      y: ((e.clientY - r.top) / r.height) * canvas.height + camera.y,
+      x: ((e.clientX - r.left - canvas.clientLeft) / (canvas.clientWidth)) * canvas.width + camera.x,
+      y: ((e.clientY - r.top - canvas.clientTop) / (canvas.clientHeight)) * canvas.height + camera.y,
     };
+    if(!local || !connected) return;
+    held.clear();
+    const route=townPath(local,target);
+    marker={...target,valid:!!route,until:performance.now()+1200};
+    local.path=route||[];local.input={x:0,y:0};
+    $("town-hint").textContent=route?'正在前往目标位置':'此处无法到达，请点击道路或空地。';
+    if(route)send({type:'town-target',...target,command:++command});
+    else { const feedback=marker;stop();marker=feedback; }
     canvas.focus();
   });
   $("town-chat-form").onsubmit = (e) => {
@@ -132,20 +149,8 @@ export function townUI({
     log.scrollTop = log.scrollHeight;
   }
   setInterval(() => {
-    if (!active || !connected) return;
-    const me = players.find((p) => p.id === id);
-    let v = vector();
-    if (target && me) {
-      const dx = target.x - me.x,
-        dy = target.y - me.y;
-      v = {
-        x: Math.abs(dx) > 8 ? Math.sign(dx) : 0,
-        y: Math.abs(dy) > 8 ? Math.sign(dy) : 0,
-      };
-      if (!v.x && !v.y) target = null;
-    }
-    send({ type: "town-move", ...v });
-  }, 100);
+    if(active && connected && held.size) send({type:'town-move',...vector(),command});
+  }, 200);
   const rect = (x, y, w, h, color) => {
     c.fillStyle = color;
     c.fillRect(x, y, w, h);
@@ -169,9 +174,15 @@ export function townUI({
     }
     const dt = Math.min(0.05, Math.max(0, (now - lastFrame) / 1000));
     lastFrame = now;
-    const visible = players.map((p) => {
-      const estimate = { ...p, input: p.motion };
-      moveTown(estimate, Math.min(0.1, (now - receivedAt) / 1000));
+    if(local){
+      const wasWalking=local.path?.length>0;
+      stepTown(local,dt);
+      if(wasWalking&&!local.path?.length){target=null;if(marker)marker.until=now+500;$("town-hint").textContent='已到达。可点击地面继续移动。';}
+    }
+    const visible = [...players,...npcs].map((p) => {
+      if(p.id===id&&local)return {...p,...local};
+      const estimate = { ...p, path:p.path?.map(v=>({...v})), input: p.motion };
+      stepTown(estimate, Math.min(0.1, (now - receivedAt) / 1000));
       let pose = poses.get(p.id);
       if (!pose) {
         pose = { x: p.x, y: p.y };
@@ -199,6 +210,11 @@ export function townUI({
     else {
       c.fillStyle = "#85bd89";
       c.fillRect(0, 0, TOWN.width, TOWN.height);
+    }
+    if(marker && (local?.path?.length || now<marker.until)){
+      c.strokeStyle=marker.valid?'#ffe66d':'#e24c49';c.lineWidth=3;
+      c.beginPath();c.ellipse(marker.x,marker.y,14,8,0,0,Math.PI*2);c.stroke();
+      c.beginPath();c.moveTo(marker.x-6,marker.y);c.lineTo(marker.x+6,marker.y);c.moveTo(marker.x,marker.y-6);c.lineTo(marker.x,marker.y+6);c.stroke();
     }
     for (const p of visible.sort((a, b) => a.y - b.y)) {
       c.fillStyle = "#33534f44";
@@ -253,10 +269,17 @@ export function townUI({
       if (m.type === "hello") id = m.id;
       if (m.type === "town-state") {
         players = m.players;
+        npcs = m.npcs || [];
+        const self=players.find(p=>p.id===id);
+        if(self && (!local || self.command===command)) {
+          if(!local || Math.hypot(local.x-self.x,local.y-self.y)>100 || (!self.path?.length && !self.moving))
+            local={...self,input:self.motion,path:self.path?.map(p=>({...p}))||[]};
+        }
         receivedAt = performance.now();
         for (const key of poses.keys())
-          if (!players.some((p) => p.id === key)) poses.delete(key);
+          if (![...players,...npcs].some((p) => p.id === key)) poses.delete(key);
       }
+      if(m.type==='town-target-result' && m.command===command && !m.accepted){stop();$('town-hint').textContent='此处无法到达，请重新选择位置。';}
       if (m.type === "town-history") {
         messages = m.messages;
         chat();
@@ -270,6 +293,7 @@ export function townUI({
     disconnected() {
       connected = false;
       players = [];
+      local=null;poses.clear();npcs=[];
       stop();
     },
     reconnect() {

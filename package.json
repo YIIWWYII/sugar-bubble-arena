@@ -6,10 +6,11 @@
   "description": "糖泡对战 —— 多模式联机游戏",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "build:pages": "node tools/build-pages.mjs"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "dependencies": {
     "ws": "^8.21.3"

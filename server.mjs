@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { TOWN, moveTown } from "./public/town.mjs";
+import { NPC_DESIGNS } from "./public/appearance.mjs";
+import { TOWN, stepTown, townPath, createTownNPCs, tickTownNPC } from "./public/town.mjs";
 import { BioMatch } from "./public/bio.mjs";
 import { SurvivorMatch } from "./public/survivor.mjs";
 import http from "node:http";
@@ -20,6 +21,7 @@ import { WaterMatch } from "./public/water11.mjs";
 import { BOT_LEVELS, addBot, tickBot } from "./bots.mjs";
 import { createMaps, mapForMode } from "./public/maps.mjs";
 import { ProfileStore } from "./profiles.mjs";
+import { accountAPI } from "./accounts.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "public");
 const map = JSON.parse(
@@ -31,13 +33,14 @@ const waterMap = JSON.parse(
 const maps = createMaps(map, waterMap);
 const profiles = new ProfileStore(
   process.env.PROFILE_FILE ||
-    path.join(root, "..", ".runtime", "profiles.json"),
+    path.join(root, "..", ".runtime", "profiles.sqlite"),
 );
 const rooms = new Map();
 const cooperative = (map) =>
   ["water11", ...EXPEDITION_MODES].includes(map.mode);
 const lobbyChat = [];
 const townChat = [];
+const townNPCs = createTownNPCs(NPC_DESIGNS);
 function publishTown() {
   const members = [...wss.clients].filter((c) => c.town);
   if (!members.length) return;
@@ -45,6 +48,7 @@ function publishTown() {
     members,
     JSON.stringify({
       type: "town-state",
+      npcs: townNPCs,
       players: members.map((c) => ({
         id: c.pid,
         ...c.town,
@@ -55,7 +59,7 @@ function publishTown() {
   );
 }
 
-// 部署侧配置：.runtime/config.json 优先于环境变量，便于在无法注入 env 的托管环境（如宝塔）下设置来源校验
+// 环境变量优先；无法注入 env 的托管面板可使用 .runtime/config.json。
 let fileConfig = {};
 try {
   fileConfig = JSON.parse(
@@ -65,7 +69,7 @@ try {
         ".runtime/config.json",
       ),
       "utf8",
-    ),
+    ).replace(/^\uFEFF/, ""),
   );
 } catch {}
 const mime = {
@@ -86,10 +90,12 @@ const mime = {
   ".txt": "text/plain; charset=utf-8",
   ".xml": "application/xml",
 };
-const port = Number(fileConfig.port || process.env.PORT || 8787);
+const port = Number(process.env.PORT || fileConfig.port || 8787);
 const publicOrigin = String(
-  fileConfig.publicOrigin ?? process.env.PUBLIC_ORIGIN ?? "",
+  process.env.PUBLIC_ORIGIN ?? fileConfig.publicOrigin ?? "",
 ).replace(/\/$/, "");
+const multiplayerEnabled = process.env.MULTIPLAYER_ENABLED === "true";
+const closedMessage = "暂未开放，敬请等待";
 const addresses = Object.entries(os.networkInterfaces())
   .flatMap(([name, entries]) => entries.map((x) => ({ ...x, name })))
   .filter(
@@ -104,9 +110,13 @@ const addresses = Object.entries(os.networkInterfaces())
       Number(/virtual|vethernet|docker|wsl/i.test(b.name)),
   )
   .map((x) => `http://${x.address}:${port}`);
+const accounts = accountAPI(profiles, publicOrigin, id => {
+  if (id) for(const client of wss.clients) if(client.profileId===id) client.close(4001,'Account changed');
+});
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");
+    if (await accounts(req,res,url)) return;
     if (url.pathname === "/api/profile") {
       if (req.method !== "GET") {
         res.writeHead(405);
@@ -122,7 +132,7 @@ const server = http.createServer(async (req, res) => {
         if (!id) {
           id = profiles.create();
           headers["set-cookie"] =
-            `qqt_profile=${id}; HttpOnly; SameSite=Strict; Path=/; Max-Age=31536000`;
+            [`qqt_profile=${id}; HttpOnly; SameSite=Strict; Path=/; Max-Age=31536000${publicOrigin.startsWith('https:') ? '; Secure' : ''}`, 'qqt_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'];
         }
         res.writeHead(200, headers);
         res.end(JSON.stringify(profiles.view(id)));
@@ -152,6 +162,7 @@ const server = http.createServer(async (req, res) => {
       res.end(
         JSON.stringify({
           game: "sugar-bubble-arena",
+          multiplayerEnabled,
           addresses: publicOrigin ? [publicOrigin] : addresses,
           port,
           version: "0.6.0",
@@ -212,7 +223,7 @@ const server = http.createServer(async (req, res) => {
 const wss = new WebSocketServer({
   server,
   maxPayload: 4096,
-  verifyClient: ({ origin }) => !publicOrigin || origin === publicOrigin,
+  verifyClient: ({ origin }) => !publicOrigin || origin === publicOrigin || origin === `http://localhost:${port}` || origin === `http://127.0.0.1:${port}`,
 });
 const send = (ws, data) => {
   if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data));
@@ -230,10 +241,10 @@ function broadcast(clients, encoded) {
 function lobbyPacket() {
   return {
     type: "lobby",
-    online: [...wss.clients].filter((c) => c.readyState === WebSocket.OPEN)
-      .length,
+    online: multiplayerEnabled ? [...wss.clients].filter((c) => c.readyState === WebSocket.OPEN)
+      .length : 0,
     rooms: [...rooms.values()]
-      .filter((r) => !r.match.practice && !r.bot)
+      .filter((r) => multiplayerEnabled && !r.match.practice && !r.bot)
       .map((r) => ({
         code: r.code,
         host: r.match.players.find((p) => p.id === r.host)?.name || "糖友",
@@ -327,6 +338,12 @@ function leave(ws) {
 }
 wss.on("connection", (ws, req) => {
   ws.profileId = profiles.identify(req.headers.cookie);
+  ws.authCookie = req.headers.cookie;
+  // One active connection per saved character prevents simultaneous matches
+  // from different devices using the same loadout and reward identity.
+  if (ws.profileId) for(const other of wss.clients) {
+    if(other!==ws && other.profileId===ws.profileId) other.close(4001,'Signed in elsewhere');
+  }
   ws.pid = randomBytes(6).toString("hex");
   ws.window = Date.now();
   ws.messages = 0;
@@ -348,6 +365,10 @@ wss.on("connection", (ws, req) => {
     }
     try {
       const msg = JSON.parse(raw.toString());
+      if (!multiplayerEnabled && (msg.type === "join" || msg.type === "chat" || String(msg.type).startsWith("town-") ||
+          (msg.type === "create" && msg.practice !== true && !Object.hasOwn(BOT_LEVELS,msg.aiLevel ?? '') && !(msg.solo === true && ['boss','bio','survivor','water11'].includes(msg.mode))))) {
+        send(ws,{type:"error",message:closedMessage});return;
+      }
       if (!msg || typeof msg !== "object") return;
       if (msg.type === "ping") {
         send(ws, { type: "pong", sent: msg.sent });
@@ -388,12 +409,23 @@ wss.on("connection", (ws, req) => {
         publishTown();
         return;
       }
+      if (msg.type === "town-target") {
+        if(ws.town && Number.isFinite(msg.x) && Number.isFinite(msg.y)){
+          ws.lastTownTarget=Date.now();
+          const route=townPath(ws.town,{x:msg.x,y:msg.y});
+          ws.town.path=route||[];ws.town.input={x:0,y:0};ws.town.command=msg.command;
+          send(ws,{type:'town-target-result',command:msg.command,accepted:!!route});publishTown();
+        }
+        return;
+      }
       if (msg.type === "town-move") {
         if (
           ws.town &&
           [-1, 0, 1].includes(msg.x) &&
           [-1, 0, 1].includes(msg.y)
         ) {
+          ws.town.path = [];
+          ws.town.command = msg.command;
           ws.town.input = { x: msg.x, y: msg.y };
           ws.town.inputAt = Date.now();
         }
@@ -773,6 +805,7 @@ const heartbeat = setInterval(() => {
       continue;
     }
     ws.alive = false;
+    if(ws.profileId && profiles.identify(ws.authCookie)!==ws.profileId){ws.close(4001,'Session expired');continue;}
     ws.ping();
   }
 }, 30000);
@@ -793,16 +826,22 @@ const timer = setInterval(() => {
       if (client.town) {
         if (Date.now() - (client.town.inputAt || 0) > 600)
           client.town.input = { x: 0, y: 0 };
-        moveTown(client.town, RULES.tick);
+        stepTown(client.town, RULES.tick);
       }
-    if (broadcasts % 6 === 0) publishTown();
+    if ([...wss.clients].some(c=>c.town)) for(const npc of townNPCs) tickTownNPC(npc,RULES.tick,Date.now());
+    if (broadcasts % 3 === 0) publishTown();
     accumulator -= RULES.tick;
     broadcasts++;
     if (broadcasts % 2 === 0) for (const room of rooms.values()) publish(room);
     if (broadcasts % 120 === 0) publishLobby();
   }
 }, 8);
-server.listen(port, "0.0.0.0", async () => {
+const backupTimer = setInterval(() => {
+  try { profiles.backup(); } catch(error) { console.error('Database backup failed:', error.message); }
+},6*60*60*1000);
+backupTimer.unref();
+server.listen(port, process.env.HOST || "0.0.0.0", async () => {
+  if(!process.env.PROFILE_FILE)try{profiles.backup();}catch(error){console.error('Database backup failed:',error.message);}
   if (port === 8787) {
     const runtime = path.join(root, "..", ".runtime");
     await mkdir(runtime, { recursive: true });
@@ -820,6 +859,7 @@ server.on("error", (err) => {
 process.on("SIGTERM", () => {
   clearInterval(timer);
   clearInterval(heartbeat);
+  clearInterval(backupTimer);
   for (const ws of wss.clients) ws.close();
   wss.close();
   server.close();

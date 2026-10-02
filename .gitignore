@@ -2,5 +2,13 @@ node_modules/
 .runtime/
 test-results/
 .env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.legacy.json
 .claude/
 *-preview.png
+dist/

@@ -1,0 +1,97 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { LocalSession } from '../public/local-session.mjs';
+import { createMaps } from '../public/maps.mjs';
+import { freshProfile } from '../public/progression.mjs';
+import { saveEnvelope, validateSave, readLocalProfile, writeLocalProfile, LOCAL_SAVE_KEY } from '../public/local-profile.mjs';
+const maps = createMaps(JSON.parse(readFileSync(new URL('../public/assets/map.json',import.meta.url))),JSON.parse(readFileSync(new URL('../public/assets/water11.json',import.meta.url))));
+const fixture = () => {
+  const packets = [], session = new LocalSession(maps,freshProfile(),p => packets.push(structuredClone(p)));
+  return {session,packets};
+};
+for (const [mode,mapId] of Object.entries({classic:'bun06_8',boss:'boss-court',bio:'bio-lab',survivor:'survivor-grove',water11:'water11_8'})) {
+  test(`browser engine starts and advances ${mode} without a server`,() => {
+    const {session,packets} = fixture();
+    session.receive({type:'create',mode,mapId,aiLevel:mode === 'classic'?'normal':undefined,solo:true});
+    assert.equal(packets.find(p => p.type === 'error'),undefined);
+    assert.ok(packets.some(p => p.type === 'joined'));
+    for(let i=0;i<1200;i++) {
+      const m=session.match;
+      const p=m.players.find(p=>p.id===session.id), build=p.bioBuild || p.run;
+      if (build?.offers.length) session.receive({type:'survivor-pick',key:build.offers[0],offerId:build.offerId});
+      session.tick();
+    }
+    assert.ok(session.match.players.some(p=>p.id===session.id));
+    assert.ok(session.match.time > 1, 'simulation advances after choices');
+    assert.ok(['countdown','playing','finished'].includes(session.match.state));
+    session.receive({type:'leave'});
+    assert.equal(session.match,null);
+  });
+}
+test('local mode rejects all multiplayer entry points',() => {
+  const {session,packets}=fixture();
+  for (const msg of [{type:'join',code:'123456'},{type:'town-enter'},{type:'chat',text:'hello'},{type:'create',mode:'classic',mapId:'bun06_8'}]) {
+    session.receive(msg); assert.equal(packets.at(-1).message,'暂未开放，敬请等待');
+  }
+  assert.equal(session.match,undefined);
+});
+test('appearance is persisted; one completed round earns resources exactly once',() => {
+  const {session,packets}=fixture();
+  session.receive({type:'profile-change',action:{type:'appearance',value:{...session.profile.appearance,wings:1}}});
+  assert.equal(packets.at(-1).save.appearanceConfigured,true);
+  session.receive({type:'create',mode:'classic',mapId:'bun06_8',aiLevel:'hard'});
+  session.match.time=30;session.match.state='finished';session.match.winner=0;
+  session.settle();session.settle();
+  const reward=packets.filter(p=>p.type==='round-reward');
+  assert.equal(reward.length,1);assert.equal(reward[0].profile.matches,1);
+  assert.ok(reward[0].profile.coins>60);assert.ok(reward[0].profile.collection.includes('enemy:bot'));
+  session.receive({type:'return'});assert.equal(session.match.roundId,2);
+  assert.equal(session.profile.matches,1);
+});
+test('practice earns no resources and invalid imports preserve the old save',() => {
+  const {session,packets}=fixture();
+  session.receive({type:'create',mode:'classic',mapId:'bun06_8',practice:true});
+  session.match.time=30;session.match.state='finished';session.match.winner=0;session.settle();
+  assert.ok(!packets.some(p=>p.type==='round-reward'));
+  const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
+  writeLocalProfile(freshProfile(),storage);
+  const before=data.get(LOCAL_SAVE_KEY);
+  for (const profile of [{...freshProfile(),coins:-1},{...freshProfile(),skills:{}},{...freshProfile(),equipped:'bad'},{...freshProfile(),collection:['bad']}]) {
+    assert.throws(()=>writeLocalProfile(profile,storage));assert.equal(data.get(LOCAL_SAVE_KEY),before);
+  }
+  assert.deepEqual(validateSave(JSON.parse(before)),readLocalProfile(storage));
+  assert.throws(()=>validateSave({...saveEnvelope(freshProfile()),version:2}));
+});
+
+
+test('server release gate blocks rooms and town while allowing AI',async () => {
+  const {spawn} = await import('node:child_process');
+  const {mkdtemp,rm} = await import('node:fs/promises');
+  const {tmpdir} = await import('node:os');
+  const {default:path} = await import('node:path');
+  const {WebSocket} = await import('ws');
+  const temp=await mkdtemp(path.join(tmpdir(),'bubble-gate-')),port=18931;
+  const server=spawn(process.execPath,['server.mjs'],{cwd:new URL('..',import.meta.url),env:{...process.env,MULTIPLAYER_ENABLED:'false',PORT:String(port),PUBLIC_ORIGIN:'',PROFILE_FILE:path.join(temp,'profiles.sqlite')},windowsHide:true,stdio:['ignore','pipe','pipe']});
+  let ws;
+  try {
+    await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',code=>reject(Error(`server exit ${code}`)));});
+    const info=await fetch(`http://localhost:${port}/api/info`).then(r=>r.json());
+    assert.equal(info.multiplayerEnabled,false);
+    ws=new WebSocket(`ws://localhost:${port}`);
+    await new Promise((resolve,reject)=>{ws.once('open',resolve);ws.once('error',reject);});
+    const request=(msg,type)=>new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{ws.off('message',receive);reject(Error('protocol timeout'));},3000);
+      const receive=raw=>{const packet=JSON.parse(raw);if(packet.type===type){clearTimeout(timer);ws.off('message',receive);resolve(packet);}};
+      ws.on('message',receive);ws.send(JSON.stringify(msg));
+    });
+    for(const msg of [{type:'create'},{type:'join',code:'123456'},{type:'town-enter'},{type:'chat',text:'test'}]) assert.equal((await request(msg,'error')).message,'暂未开放，敬请等待');
+    assert.equal((await request({type:'create',mode:'classic',mapId:'bun06_8',aiLevel:'easy'},'joined')).type,'joined');
+    const lobby=await fetch(`http://localhost:${port}/api/rooms`).then(r=>r.json());
+    assert.deepEqual(lobby.rooms,[]);assert.equal(lobby.online,0);
+  } finally {
+    ws?.terminate();
+    await new Promise(resolve=>{server.once('exit',resolve);server.kill();});
+    await rm(temp,{recursive:true,force:true});
+  }
+});

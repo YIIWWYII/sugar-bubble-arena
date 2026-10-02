@@ -1,3 +1,7 @@
+import { localMode } from "./local-profile.mjs";
+import { LocalConnection } from "./local-connection.mjs";
+import { enterGame } from "./entry-ui.mjs";
+import { touchControls } from "./touch-controls.mjs";
 import { townUI } from "./town-ui.mjs";
 import { MODE_MUSIC } from "./music.mjs";
 import { BIO_UPGRADES } from "./bio.mjs";
@@ -20,6 +24,10 @@ import {
 import { ITEM_ICONS } from "./progression.mjs";
 import { careerUI, openLobbyPage, closeLobbyPage } from "./career-ui.mjs";
 
+const releaseInfo = localMode ? {multiplayerEnabled:false} : await fetch('/api/info', {cache:'no-store'}).then(r=>r.json()).catch(()=>({}));
+const multiplayerEnabled = releaseInfo.multiplayerEnabled === true;
+document.body.dataset.multiplayer = String(multiplayerEnabled);
+const entryProfile = await enterGame();
 const $ = (id) => document.getElementById(id);
 const canvas = $("game"),
   ctx = canvas.getContext("2d");
@@ -297,12 +305,12 @@ function updateCombatNotices() {
 }
 
 function connect() {
-  socket = new WebSocket(
+  socket = localMode ? new LocalConnection(maps) : new WebSocket(
     `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}`,
   );
   socket.addEventListener("open", () => {
     $("connection-dot").classList.add("online");
-    $("connection-label").textContent = "游戏服务已连接";
+    $("connection-label").textContent = localMode ? "单人模式 · 本地存档" : "游戏服务已连接";
     town.reconnect();
   });
   socket.addEventListener("message", ({ data }) => {
@@ -324,7 +332,7 @@ function connect() {
     }
     if (msg.type === "pong")
       $("latency").textContent =
-        `${Math.round(performance.now() - msg.sent)} ms`;
+        localMode ? "" : `${Math.round(performance.now() - msg.sent)} ms`;
     if (msg.type === "error") {
       toast(msg.message);
       resetButtons();
@@ -346,6 +354,7 @@ function connect() {
       sequence = 0;
       predicted = null;
       career.room(true);
+      if (localMode) $("account-open").disabled = true;
       closeLobbyPage(true);
       localStorage.setItem("qqt-name", $("nickname").value.trim());
       updateMusic();
@@ -379,7 +388,7 @@ function connect() {
     }
     if (msg.type === "left") resetHome();
   });
-  socket.addEventListener("close", () => {
+  socket.addEventListener("close", (event) => {
     town.disconnected();
     $("connection-dot").classList.remove("online");
     $("connection-label").textContent = "连接断开 · 正在重连";
@@ -389,6 +398,10 @@ function connect() {
       toast("与本地服务断开连接，请重新加入房间");
     }
     clearTimeout(reconnectTimer);
+    if(event.code===4001){
+      $("connection-label").textContent="登录状态已更新，请刷新页面";
+      return;
+    }
     reconnectTimer = setTimeout(connect, 1600);
   });
 }
@@ -400,6 +413,12 @@ const town = townUI({
   openLobbyPage,
   closeLobbyPage,
 });
+if (!multiplayerEnabled) {
+  $("rooms-open").textContent = "联机大厅 · 暂未开放";
+  document.querySelector('[data-mode="online"]').textContent = '好友联机 · 未开放';
+  $("touch-chat").hidden = true;
+  $("copy-invite").hidden = true;
+}
 const career = careerUI(manifest, send, images, (id) => {
   const preview = document.createElement("canvas");
   preview.width = 150;
@@ -407,13 +426,8 @@ const career = careerUI(manifest, send, images, (id) => {
   paintLobbyMap(preview.getContext("2d"), maps.get(id));
   return preview.toDataURL();
 });
-try {
-  const response = await fetch("/api/profile");
-  if (!response.ok) throw Error("档案服务暂不可用");
-  career.profile(await response.json());
-} catch {
-  toast("角色档案暂不可用，本次游戏无法保存养成进度");
-}
+career.profile(entryProfile);
+delete document.body.dataset.entry;
 connect();
 setInterval(() => {
   if (socket?.readyState === 1)
@@ -434,8 +448,7 @@ function resetButtons() {
   }
 }
 function renderLobby() {
-  $("lobby-count").textContent =
-    `在线 ${directory.online} 人 · ${directory.rooms.length} 个房间`;
+  $("lobby-count").textContent = multiplayerEnabled ? `在线 ${directory.online} 人 · ${directory.rooms.length} 个房间` : "单人挑战与 AI 对战已开放";
   const list = $("public-rooms");
   list.replaceChildren();
   const filtered = directory.rooms.filter(
@@ -482,6 +495,7 @@ function resetHome() {
   pickSignature = "";
   document.body.dataset.screen = "home";
   career.room(false);
+  if (localMode) { $("account-open").disabled = false; $("connection-label").textContent = "单人模式 · 本地存档"; }
   $("combat-tools").hidden = true;
   map = bunMap;
   roomCode = null;
@@ -524,6 +538,7 @@ function renderChat() {
   log.scrollTop = log.scrollHeight;
 }
 function openChat() {
+  if (!multiplayerEnabled) { toast("暂未开放，敬请等待"); return; }
   release();
   $("chat-form").hidden = false;
   $("chat-panel").classList.add("typing");
@@ -727,6 +742,11 @@ function updateUI() {
   $("result-panel").hidden = !finished;
   $("leave-game").hidden = lobby;
   const self = state.players.find((p) => p.id === myId);
+  for (const [action, field, label] of [['use-fork','forks','叉子'],['place-banana','bananas','香蕉'],['place-smile','smiles','笑脸']]) {
+    const button = document.querySelector(`[data-touch-action="${action}"]`);
+    button.textContent = `${label} ${self?.[field] || 0}`;
+    button.disabled = !self?.[field];
+  }
   const expedition = EXPEDITION_MODES.includes(state.mode),
     water = state.mode === "water11" || expedition;
   $("bio-antidote").hidden = state.mode !== "bio" || self?.faction === "zombie";
@@ -788,12 +808,12 @@ function updateUI() {
     ? `人机对战 · ${{ easy: "简单", normal: "普通", hard: "困难" }[state.aiLevel]}`
     : state.practice
       ? "单人练习场"
-      : `房间 ${roomCode}`;
+      : localMode ? `${GAME_MODES[state.mode]} · 单人挑战` : `房间 ${roomCode}`;
   // 水面11 不在这条状态栏里报血量：血条按原版挂在 boss 头上，这一行整行留空。
   // 用清空而不是 hidden —— footer 是 space-between，藏掉左侧会把它右对齐的落款挤到左边。
   $("footer-status").textContent = water
     ? ""
-    : `房间 ${roomCode} · ${state.players.length}/8 人 · 带回敌包 红 ${state.captured?.[0] || 0}/3 · 蓝 ${state.captured?.[1] || 0}/3`;
+    : localMode ? (state.mode === "classic" ? `带回敌包 红 ${state.captured?.[0] || 0}/3 · 蓝 ${state.captured?.[1] || 0}/3` : `${GAME_MODES[state.mode]} · 单人挑战`) : `房间 ${roomCode} · ${state.players.length}/8 人 · 带回敌包 红 ${state.captured?.[0] || 0}/3 · 蓝 ${state.captured?.[1] || 0}/3`;
   const signature = JSON.stringify([
     state.state,
     hostId,
@@ -1021,6 +1041,7 @@ $("sound-button").onclick = () => {
 };
 $("fullscreen-button").onclick = () => {
   if (document.fullscreenElement) document.exitFullscreen();
+  else if (!document.documentElement.requestFullscreen) toast("当前浏览器不支持全屏，可横屏游玩");
   else
     document.documentElement
       .requestFullscreen()
@@ -1082,18 +1103,21 @@ const keyMap = {
   ArrowRight: "right",
   KeyD: "right",
 };
+let touchDirection = null;
+const moveDirection = () => touchDirection || (keys.length ? keyMap[keys.at(-1)] : null);
 function input(bomb = false) {
   if (roomCode && socket?.readyState === 1)
     socket.send(
       JSON.stringify({
         type: "input",
         seq: ++sequence,
-        dir: keys.length ? keyMap[keys.at(-1)] : null,
+        dir: moveDirection(),
         bomb,
       }),
     );
 }
 function release() {
+  touchDirection = null;
   keys = [];
   input();
 }
@@ -1196,6 +1220,15 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) release();
 });
 canvas.addEventListener("pointerdown", () => canvas.focus());
+// Touch input uses the same protocol and movement prediction as the keyboard.
+touchControls({
+  canPlay: () => !!roomCode && state.state === "playing" && !document.body.dataset.lobbyPage && !document.body.dataset.picking && !document.querySelector('dialog[open]'),
+  move: dir => { touchDirection = dir; input(); },
+  bomb: () => input(true),
+  action: type => send({type}),
+  chat: () => { release(); if ($("chat-form").hidden) openChat(); else closeChat(); },
+});
+
 
 const OX = 8,
   OY = 22,
@@ -1350,7 +1383,7 @@ function mapPreview() {
     ? ruleset === "survivor"
       ? "自动发射糖泡，拾取经验选择强化；利用陷阱阻滞怪物，接触受伤后短暂无敌。每 30 秒出现精英。"
       : ruleset === "water11"
-        ? "1–5 人合作挑战水手。用陷阱限制移动，连续糖泡命中破泡增伤，及时救援队友。"
+        ? (localMode ? "独自挑战海盗水手。用陷阱限制移动，连续糖泡命中破泡增伤。" : "1–5 人合作挑战水手。用陷阱限制移动，连续糖泡命中破泡增伤，及时救援队友。")
         : ruleset === "boss"
           ? "180 秒内击败首领。使用陷阱创造攻击时机，先困泡再连续命中造成双倍伤害。"
           : "开局三轮强化与 20 秒布防。母体从场内 AI 中产生；使用解毒剂抵御感染，转化后以丧尸身份继续进化。"
@@ -1873,8 +1906,8 @@ function render(now) {
         ry = pos.y;
       if (p.id === myId && roomCode) {
         if (!predicted) predicted = { x: 0, y: 0 };
-        if (p.status === "alive" && keys.length) {
-          const dir = keyMap[keys.at(-1)];
+        if (p.status === "alive" && moveDirection()) {
+          const dir = moveDirection();
           if (dir) {
             const [dx, dy] = DIR[dir],
               speed =
@@ -2448,7 +2481,7 @@ function render(now) {
     text(String(me.speed - RULES.speed), 156, 590, 10, "#ffe066");
   }
   if (roomCode && performance.now() - lastStateAt > 2500)
-    text("等待服务器响应…", 307, 30, 12, "#ffe99d");
+    text(localMode ? "正在恢复单人对局…" : "等待服务器响应…", 307, 30, 12, "#ffe99d");
   requestAnimationFrame(render);
 }
 requestAnimationFrame(render);

@@ -10,7 +10,7 @@ test("two independent clients join, ready, move, bomb, reject late join, and tra
   const port = 18887;
   const server = spawn(process.execPath, ["server.mjs"], {
     cwd,
-    env: { ...process.env, PORT: String(port) },
+    env: { ...process.env,MULTIPLAYER_ENABLED:"true", PORT: String(port), PUBLIC_ORIGIN: "" },
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
   });

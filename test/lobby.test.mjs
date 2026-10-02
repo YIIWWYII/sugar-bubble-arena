@@ -8,7 +8,7 @@ test("shared lobby lists real rooms, updates population, hides practice and enfo
     clients = [];
   const server = spawn(process.execPath, ["server.mjs"], {
     cwd: new URL("..", import.meta.url),
-    env: { ...process.env, PORT: String(port), PUBLIC_ORIGIN: "" },
+    env: { ...process.env,MULTIPLAYER_ENABLED:"true", PORT: String(port), PUBLIC_ORIGIN: "" },
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
   });

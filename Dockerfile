@@ -2,7 +2,7 @@ FROM node:24-alpine
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund && mkdir .runtime && chown node:node .runtime
-COPY --chown=node:node server.mjs ./
+COPY --chown=node:node server.mjs bots.mjs profiles.mjs accounts.mjs ./
 COPY --chown=node:node public ./public
 USER node
 EXPOSE 8787
