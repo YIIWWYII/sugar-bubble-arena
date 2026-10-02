@@ -23,7 +23,7 @@ export const ATTRIBUTES = {
 export const SKILLS = {
   ward: {
     name: "风行护佑",
-    icon: "item4",
+    icon: "ui-ward",
     limited: true,
     description: "获得护盾与加速，仅能通过图鉴解锁",
     duration: [1.5, 2, 2.5],
@@ -31,7 +31,7 @@ export const SKILLS = {
   },
   purify: {
     name: "净化援护",
-    icon: "item24",
+    icon: "ui-purify",
     limited: true,
     description: "清除自身减速，营救两格内队友并施加护盾",
     duration: [1, 1.5, 2],
@@ -39,28 +39,28 @@ export const SKILLS = {
   },
   sprint: {
     name: "疾风步",
-    icon: "item8",
+    icon: "ui-sprint",
     description: "短时间加速，携包时也可使用",
     duration: [2, 3, 4],
     cooldown: [20, 18, 16],
   },
   shield: {
     name: "泡泡护盾",
-    icon: "item4",
+    icon: "ui-shield",
     description: "短时间免疫糖泡伤害",
     duration: [1, 1.5, 2],
     cooldown: [30, 27, 24],
   },
   rescue: {
     name: "脱困术",
-    icon: "item24",
-    description: "被困时自行脱困，并获得短暂保护",
+    icon: "ui-rescue",
+    description: "被困时自行脱困并获得保护；生化与幸存者中可主动解除减速并获得保护",
     duration: [0.5, 0.8, 1],
     cooldown: [45, 38, 32],
   },
   magnet: {
     name: "糖果磁场",
-    icon: "item-magnet",
+    icon: "ui-magnet",
     description: "吸取附近可见增益道具，不吸陷阱和包子",
     duration: [3, 4, 5],
     cooldown: [25, 22, 19],

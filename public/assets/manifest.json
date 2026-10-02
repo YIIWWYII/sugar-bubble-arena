@@ -1515,5 +1515,245 @@
     "h": 100,
     "frames": 28,
     "duration": 100
+  },
+  "ui-sprint": {
+    "src": "/assets/ui/sprint.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-shield": {
+    "src": "/assets/ui/shield.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-ward": {
+    "src": "/assets/ui/ward.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-purify": {
+    "src": "/assets/ui/purify.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-rescue": {
+    "src": "/assets/ui/rescue.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-magnet": {
+    "src": "/assets/ui/magnet.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-vitality": {
+    "src": "/assets/ui/vitality.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-boots": {
+    "src": "/assets/ui/boots.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-pressure": {
+    "src": "/assets/ui/pressure.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-pockets": {
+    "src": "/assets/ui/pockets.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-medicine": {
+    "src": "/assets/ui/medicine.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-capacity": {
+    "src": "/assets/ui/capacity.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-recovery": {
+    "src": "/assets/ui/recovery.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-claws": {
+    "src": "/assets/ui/claws.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-pursuit": {
+    "src": "/assets/ui/pursuit.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-carapace": {
+    "src": "/assets/ui/carapace.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-tenacity": {
+    "src": "/assets/ui/tenacity.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-virulence": {
+    "src": "/assets/ui/virulence.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-regeneration": {
+    "src": "/assets/ui/regeneration.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-adrenaline": {
+    "src": "/assets/ui/adrenaline.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-growth": {
+    "src": "/assets/ui/growth.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-renewal": {
+    "src": "/assets/ui/renewal.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-force": {
+    "src": "/assets/ui/force.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-cadence": {
+    "src": "/assets/ui/cadence.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-reach": {
+    "src": "/assets/ui/reach.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-burst": {
+    "src": "/assets/ui/burst.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-frost": {
+    "src": "/assets/ui/frost.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-chain": {
+    "src": "/assets/ui/chain.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-supplies": {
+    "src": "/assets/ui/supplies.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-health": {
+    "src": "/assets/ui/health.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-speed": {
+    "src": "/assets/ui/speed.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-experience": {
+    "src": "/assets/ui/experience.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-learning": {
+    "src": "/assets/ui/learning.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-regen": {
+    "src": "/assets/ui/regen.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-thorns": {
+    "src": "/assets/ui/thorns.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-glacier": {
+    "src": "/assets/ui/glacier.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-storm": {
+    "src": "/assets/ui/storm.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-sustain": {
+    "src": "/assets/ui/sustain.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-overpower": {
+    "src": "/assets/ui/overpower.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
+  },
+  "ui-reservoir": {
+    "src": "/assets/ui/reservoir.svg",
+    "w": 32,
+    "h": 32,
+    "frames": 1
   }
 }

@@ -27,6 +27,7 @@ import { careerUI, openLobbyPage, closeLobbyPage } from "./career-ui.mjs";
 const releaseInfo = localMode ? {multiplayerEnabled:false} : await fetch('/api/info', {cache:'no-store'}).then(r=>r.json()).catch(()=>({}));
 const multiplayerEnabled = releaseInfo.multiplayerEnabled === true;
 document.body.dataset.multiplayer = String(multiplayerEnabled);
+document.body.dataset.local = String(localMode);
 const entryProfile = await enterGame();
 const $ = (id) => document.getElementById(id);
 const canvas = $("game"),
@@ -37,7 +38,16 @@ const waterMap = await fetch("/assets/water11.json").then((r) => r.json());
 const maps = createMaps(bunMap, waterMap);
 const themedTiles = ["forest", "dune", "lava", "ruin"];
 let ruleset = "classic";
-let pickSignature = "";
+let pickSignature = "", pickReadyAt = 0, activePick = null, mobilePick = null;
+const heldPhysicalKeys = new Set();
+const touchDevice = () => matchMedia('(pointer: coarse) and (hover: none)').matches;
+function chooseUpgrade(index) {
+  if (!activePick || performance.now() < pickReadyAt) return;
+  const key = activePick.offers[index];
+  if (!key) return;
+  send({type:'survivor-pick',key,offerId:activePick.offerId});
+  activePick = null;
+}
 const selectedMaps = {
     classic: "bun06_8",
     boss: "boss-court",
@@ -70,8 +80,9 @@ await Promise.all(
   throw err;
 });
 setAppearanceAssets(images);
-$("loading").hidden = true;
-$("home-panel").hidden = false;
+$("loading").hidden = !localMode;
+if (localMode) $("load-progress").textContent = "正在初始化单人引擎…";
+$("home-panel").hidden = localMode;
 
 const demo = new Match(map);
 let state = demo.snapshot(),
@@ -311,6 +322,12 @@ function connect() {
   socket.addEventListener("open", () => {
     $("connection-dot").classList.add("online");
     $("connection-label").textContent = localMode ? "单人模式 · 本地存档" : "游戏服务已连接";
+    if (localMode) {
+      $("loading").hidden = true;
+      $("home-panel").hidden = false;
+      career.profile(entryProfile);
+      delete document.body.dataset.entry;
+    }
     town.reconnect();
   });
   socket.addEventListener("message", ({ data }) => {
@@ -426,8 +443,7 @@ const career = careerUI(manifest, send, images, (id) => {
   paintLobbyMap(preview.getContext("2d"), maps.get(id));
   return preview.toDataURL();
 });
-career.profile(entryProfile);
-delete document.body.dataset.entry;
+if (!localMode) { career.profile(entryProfile); delete document.body.dataset.entry; }
 connect();
 setInterval(() => {
   if (socket?.readyState === 1)
@@ -652,6 +668,7 @@ function updateSurvivorUI() {
   if (!paused) {
     delete document.body.dataset.picking;
     pickSignature = "";
+    activePick = null;
     return;
   }
   if (!document.body.dataset.picking) {
@@ -664,11 +681,16 @@ function updateSurvivorUI() {
     signature = JSON.stringify([run?.offerId, run?.offers, run?.rerolls]);
   if (signature === pickSignature) return;
   pickSignature = signature;
+  pickReadyAt = performance.now() + 350;
+  activePick = run?.offers.length ? {offerId:run.offerId,offers:[...run.offers]} : null;
+  mobilePick = null;
+  $('survivor-confirm').hidden = !touchDevice();
+  $('survivor-confirm').disabled = true;
   $("survivor-pick-title").textContent = run?.offers.length
     ? `${state.mode === "bio" ? (self.faction === "zombie" ? "丧尸进化" : run.opening ? `开局强化 ${4 - run.opening}/3` : "人类强化") : `Lv.${run.level}`} · 三选一`
     : "等待队友选择";
   $("survivor-pick-hint").textContent =
-    "战斗与计时已暂停。所有队员完成选择后继续；强化仅在本局生效。";
+    touchDevice() ? "战斗已暂停。点选一项，再点击确认强化。" : "战斗已暂停。使用主键盘 1、2、3 选择；鼠标、空格、回车与小键盘不会确认。";
   const container = $("survivor-options");
   container.replaceChildren();
   for (const [i, key] of (run?.offers || []).entries()) {
@@ -707,8 +729,13 @@ function updateSurvivorUI() {
       ? "进化条件已满足"
       : `最高 ${u.max > 100 ? "不限" : u.max} 级`;
     button.append(tag, icon, title, detail, condition);
-    button.onclick = () =>
-      send({ type: "survivor-pick", key, offerId: run.offerId });
+    button.tabIndex = -1;
+    button.onclick = () => {
+      if (!touchDevice() || performance.now()<pickReadyAt) return;
+      mobilePick = i;
+      for(const card of container.children)card.setAttribute('aria-pressed',String(card===button));
+      $('survivor-confirm').disabled = false;
+    };
     container.append(button);
   }
   $("survivor-reroll").disabled = !run?.offers.length || !run.rerolls;
@@ -717,8 +744,11 @@ function updateSurvivorUI() {
     Object.entries(run?.ranks || {})
       .map(([k, v]) => `${catalog[k].name} ${v}`)
       .join(" · ") || "选择初始强化，开始构筑本局流派。";
-  container.querySelector("button")?.focus();
+  $("survivor-picks").focus({preventScroll:true});
 }
+$('survivor-confirm').onclick = () => { if(touchDevice() && mobilePick !== null)chooseUpgrade(mobilePick); };
+window.addEventListener('keyup',e=>heldPhysicalKeys.delete(e.code));
+window.addEventListener('blur',()=>heldPhysicalKeys.clear());
 $("bio-antidote").onclick = () => send({ type: "bio-antidote" });
 $("survivor-pick-leave").onclick = () => send({ type: "leave" });
 $("survivor-reroll").onclick = () =>
@@ -905,7 +935,7 @@ function roomCompatibility() {
   $("room-bio-settings").hidden = mode !== "bio";
   filterMapSelect($("room-create-map"), mode);
   roomMaps[mode] = $("room-create-map").value;
-  const issue = modeCompatibility(
+  const issue = lobbyCompatibility(
     maps.get($("room-create-map").value),
     $("room-create-mode").value,
   );
@@ -922,7 +952,7 @@ $("room-create-button").onclick = () => {
     send({
       type: "create",
       mapId: $("room-create-map").value,
-      mode: $("room-create-mode").value,
+      mode: engineMode(maps.get($("room-create-map").value), $("room-create-mode").value),
       bioOptions: bioOptions(true),
       name: nickname(),
     })
@@ -934,7 +964,7 @@ $("create-room").onclick = () => {
     send({
       type: "create",
       mapId: $("map-select").value,
-      mode: ruleset,
+      mode: launchMode(),
       bioOptions: bioOptions(),
       name: nickname(),
     })
@@ -959,7 +989,7 @@ $("practice").onclick = () => {
       type: "create",
       practice: true,
       mapId: $("map-select").value,
-      mode: ruleset,
+      mode: launchMode(),
       bioOptions: bioOptions(),
       name: nickname(),
     })
@@ -973,7 +1003,7 @@ $("ai-play").onclick = () => {
     send({
       type: "create",
       mapId: $("map-select").value,
-      mode: ruleset,
+      mode: launchMode(),
       bioOptions: bioOptions(),
       solo: true,
       name: nickname(),
@@ -988,7 +1018,7 @@ $("ai-play").onclick = () => {
     send({
       type: "create",
       mapId: $("map-select").value,
-      mode: ruleset,
+      mode: launchMode(),
       aiLevel: $("ai-level").value,
       name: nickname(),
     })
@@ -1018,7 +1048,7 @@ for (const id of ["leave-lobby", "leave-game"])
   };
 $("return-room").onclick = () =>
   send(
-    state.practice
+    state.practice && state.mode === "classic"
       ? { type: "drill", mode: state.drill || "map" }
       : { type: "return" },
   );
@@ -1122,13 +1152,13 @@ function release() {
   input();
 }
 window.addEventListener("keydown", (e) => {
+  const wasHeld = heldPhysicalKeys.has(e.code);
+  heldPhysicalKeys.add(e.code);
   if (document.body.dataset.lobbyPage === "town-dialog") return;
   if (state.survivor?.paused || state.bio?.paused) {
     const i = ["Digit1", "Digit2", "Digit3"].indexOf(e.code);
-    if (i >= 0 && !e.repeat) {
-      e.preventDefault();
-      $("survivor-options").children[i]?.click();
-    }
+    e.preventDefault();
+    if (i >= 0 && !e.repeat && !wasHeld) chooseUpgrade(i);
     return;
   }
   if (document.body.dataset.lobbyPage) return;
@@ -1146,8 +1176,8 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.code === "F2") {
     e.preventDefault();
-    if (!state.practice || !roomCode) {
-      toast("F2 菜单仅在单人训练中可用");
+    if (!state.practice || state.mode !== "classic" || !roomCode) {
+      toast("F2 特殊训练工具仅用于经典练习；其他模式按原规则练习");
       return;
     }
     release();
@@ -1328,15 +1358,18 @@ function paintLobbyMap(preview, selected) {
   paintDefense(preview, selected.defenseZone);
   preview.restore();
 }
+const engineMode = (map, mode) => mode === 'boss' && map?.mode === 'water11' ? 'water11' : mode;
+const launchMode = () => engineMode(maps.get($("map-select").value),ruleset);
+const lobbyCompatibility = (map,mode) => modeCompatibility(map,engineMode(map,mode));
 function filterMapSelect(select, mode, preferred) {
   for (const option of select.options) {
-    const blocked = !!modeCompatibility(maps.get(option.value), mode);
+    const blocked = !!lobbyCompatibility(maps.get(option.value), mode);
     option.hidden = blocked;
     option.disabled = blocked;
   }
-  if (!select.value || modeCompatibility(maps.get(select.value), mode))
+  if (!select.value || lobbyCompatibility(maps.get(select.value), mode))
     select.value =
-      preferred && !modeCompatibility(maps.get(preferred), mode)
+      preferred && !lobbyCompatibility(maps.get(preferred), mode)
         ? preferred
         : [...select.options].find((o) => !o.disabled)?.value || "";
 }
@@ -1345,13 +1378,13 @@ function mapPreview() {
   selectedMaps[ruleset] = $("map-select").value;
   let count = 0;
   for (const button of document.querySelectorAll("[data-map]")) {
-    button.hidden = !!modeCompatibility(maps.get(button.dataset.map), ruleset);
+    button.hidden = !!lobbyCompatibility(maps.get(button.dataset.map), ruleset);
     if (!button.hidden) {
       count++;
       if (button.dataset.previewMode !== ruleset) {
         paintLobbyMap(
           button.querySelector("canvas").getContext("2d"),
-          mapForMode(maps.get(button.dataset.map), ruleset),
+          mapForMode(maps.get(button.dataset.map), engineMode(maps.get(button.dataset.map),ruleset)),
         );
         button.dataset.previewMode = ruleset;
       }
@@ -1364,6 +1397,7 @@ function mapPreview() {
 
   const selected = maps.get($("map-select").value),
     preview = $("map-preview").getContext("2d");
+  document.querySelector('#mode-practice p').textContent = ruleset === 'classic' ? '自由练习走位和穿泡。按 F2 打开训练菜单，不结算养成资源。' : '按当前地图和模式进行练习，保留首领、怪物与强化机制，不结算养成资源。';
   $("bio-settings").hidden = ruleset !== "bio";
   const expedition =
     EXPEDITION_MODES.includes(ruleset) || ruleset === "water11";
@@ -1377,12 +1411,12 @@ function mapPreview() {
   document.querySelector("[data-mode=ai]").textContent = expedition
     ? "单人挑战"
     : "人机挑战";
-  document.querySelector("[data-mode=practice]").disabled = expedition;
-  if (expedition && lobbyMode === "practice") selectLobbyMode("ai");
+  document.querySelector("[data-mode=practice]").disabled = false;
+
   document.querySelector("#mode-ai p").textContent = expedition
     ? ruleset === "survivor"
       ? "自动发射糖泡，拾取经验选择强化；利用陷阱阻滞怪物，接触受伤后短暂无敌。每 30 秒出现精英。"
-      : ruleset === "water11"
+      : launchMode() === "water11"
         ? (localMode ? "独自挑战海盗水手。用陷阱限制移动，连续糖泡命中破泡增伤。" : "1–5 人合作挑战水手。用陷阱限制移动，连续糖泡命中破泡增伤，及时救援队友。")
         : ruleset === "boss"
           ? "180 秒内击败首领。使用陷阱创造攻击时机，先困泡再连续命中造成双倍伤害。"
@@ -1393,23 +1427,23 @@ function mapPreview() {
     : "创建房间后邀请好友加入。抢包地图支持 2–8 人，水面 11 支持 1–5 人合作。";
   $("map-title").textContent = selected.name;
   $("map-description").textContent =
-    `${selected.description || "经典包房 · 绕路争夺"} · 适用：${(selected.supportedModes || Object.keys(GAME_MODES).filter((mode) => !modeCompatibility(selected, mode))).map((mode) => GAME_MODES[mode]).join("、")}`;
+    `${selected.description || "经典包房 · 绕路争夺"} · 适用：${(selected.supportedModes || Object.keys(GAME_MODES).filter((mode) => !lobbyCompatibility(selected, mode))).map((mode) => GAME_MODES[mode]).join("、")}`;
   paintLobbyMap(
     preview,
-    modeCompatibility(selected, ruleset)
+    lobbyCompatibility(selected, ruleset)
       ? selected
-      : mapForMode(selected, ruleset),
+      : mapForMode(selected, engineMode(selected,ruleset)),
   );
   for (const button of document.querySelectorAll("[data-map]"))
     button.setAttribute(
       "aria-pressed",
       String(button.dataset.map === selected.id),
     );
-  const issue = modeCompatibility(selected, ruleset);
+  const issue = lobbyCompatibility(selected, ruleset);
   $("mode-compatibility").textContent = issue;
   $("mode-compatibility").hidden = !issue;
   for (const id of ["ai-play", "create-room", "practice"])
-    $(id).disabled = !!issue || (id === "practice" && expedition);
+    $(id).disabled = !!issue;
   document.querySelector('[data-mode="ai"]').disabled = false;
 }
 for (const selected of maps.values())

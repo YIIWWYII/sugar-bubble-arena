@@ -343,23 +343,11 @@ export function hasLargeDecor(recipe) {
     ) || (recipe?.accessory || 0) > 0
   );
 }
+// All previews use the same 100px equipment cell, anchor and body scale.
 export function portraitURL(image, recipe, key = "prince-red-stand-3") {
-  const sheet = appearanceSheet(image, key, recipe),
-    c = document.createElement("canvas"),
-    large = hasLargeDecor(recipe);
-  c.width = large ? 100 : 44;
-  c.height = large ? 100 : 64;
-  c.getContext("2d").drawImage(
-    sheet,
-    large ? 0 : 28,
-    large ? 0 : 17,
-    c.width,
-    c.height,
-    0,
-    0,
-    c.width,
-    c.height,
-  );
+  const sheet = appearanceSheet(image, key, recipe), c = document.createElement("canvas");
+  c.width = c.height = 100;
+  c.getContext("2d").drawImage(sheet, 0, 0, 100, 100, 0, 0, 100, 100);
   return c.toDataURL();
 }
 

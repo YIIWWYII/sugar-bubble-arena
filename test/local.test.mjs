@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { LocalSession } from '../public/local-session.mjs';
 import { createMaps } from '../public/maps.mjs';
-import { freshProfile } from '../public/progression.mjs';
+import { SKILLS, TEMP_ITEMS, freshProfile } from '../public/progression.mjs';
 import { saveEnvelope, validateSave, readLocalProfile, writeLocalProfile, LOCAL_SAVE_KEY } from '../public/local-profile.mjs';
 const maps = createMaps(JSON.parse(readFileSync(new URL('../public/assets/map.json',import.meta.url))),JSON.parse(readFileSync(new URL('../public/assets/water11.json',import.meta.url))));
 const fixture = () => {
@@ -31,7 +31,7 @@ for (const [mode,mapId] of Object.entries({classic:'bun06_8',boss:'boss-court',b
 }
 test('local mode rejects all multiplayer entry points',() => {
   const {session,packets}=fixture();
-  for (const msg of [{type:'join',code:'123456'},{type:'town-enter'},{type:'chat',text:'hello'},{type:'create',mode:'classic',mapId:'bun06_8'}]) {
+  for (const msg of [{type:'join',code:'123456'},{type:'chat',text:'hello'},{type:'create',mode:'classic',mapId:'bun06_8'}]) {
     session.receive(msg); assert.equal(packets.at(-1).message,'暂未开放，敬请等待');
   }
   assert.equal(session.match,undefined);
@@ -95,3 +95,46 @@ test('server release gate blocks rooms and town while allowing AI',async () => {
     await rm(temp,{recursive:true,force:true});
   }
 });
+
+
+test('local town moves inhabitants and stops the player at the clicked destination',()=>{
+  const {session,packets}=fixture(); session.receive({type:'town-enter'});
+  const npc=session.townNPCs[0], origin={x:npc.x,y:npc.y};
+  session.receive({type:'town-target',x:680,y:570,command:1});
+  assert.equal(packets.find(p=>p.type==='town-target-result').accepted,true);
+  for(let i=0;i<360;i++)session.tick();
+  assert.equal(session.town.x,680);assert.equal(session.town.y,570);
+  assert.equal(session.town.moving,false);assert.notDeepEqual({x:npc.x,y:npc.y},origin);
+  session.receive({type:'town-leave'});assert.equal(session.town,null);
+});
+for(const [mode,mapId] of Object.entries({boss:'boss-court',bio:'bio-lab',survivor:'survivor-grove',water11:'water11_8'})){
+  test(`${mode} practice starts and never grants persistent rewards`,()=>{
+    const {session,packets}=fixture();session.receive({type:'create',mode,mapId,practice:true});
+    assert.ok(session.match);assert.equal(packets.find(p=>p.type==='error'),undefined);
+    session.match.state='finished';session.match.time=60;session.match.winner=0;session.settle();
+    assert.ok(!packets.some(p=>p.type==='round-reward'));
+  });
+}
+
+
+for(const [mode,mapId] of Object.entries({classic:'bun06_8',boss:'boss-court',bio:'bio-lab',survivor:'survivor-grove',water11:'water11_8'})) {
+  test(`${mode} applies every equipped skill and all temporary pickups`,()=>{
+    const {session}=fixture();session.receive({type:'create',mode,mapId,practice:true});
+    const m=session.match,p=m.players[0];m.state='playing';m.time=10;
+    const build=p.bioBuild || p.run;
+    while(build?.offers.length)m.choose(p.id,build.offers[0],build.offerId);
+    for(const key of Object.keys(SKILLS)) {
+      p.skill=key;p.skillLevel=3;p.skillReadyAt=0;p.status=key==='rescue'&&!['bio','survivor'].includes(mode)?'trapped':'alive';
+      p.shieldUntil=p.hasteUntil=p.magnetUntil=0;p.slowUntil=20;
+      assert.equal(m.useSkill(p.id),true,`${key} activates`);
+      assert.equal(m.useSkill(p.id),false,`${key} respects cooldown`);
+      assert.equal(p.skillReadyAt,10+SKILLS[key].cooldown[2]);
+      if(['shield','ward','purify','rescue'].includes(key))assert.ok(p.shieldUntil>10);
+      if(['sprint','ward'].includes(key))assert.ok(m.movementSpeed(p)>p.speed);
+      if(key==='purify'||key==='rescue')assert.equal(p.slowUntil,0);
+      if(key==='magnet')assert.ok(p.magnetUntil>10);
+    }
+    for(const kind of Object.keys(TEMP_ITEMS))m.collectItem(p,{kind});
+    for(const field of ['hasteUntil','shieldUntil','surgeUntil','magnetUntil'])assert.ok(p[field]>m.time,field);
+  });
+}

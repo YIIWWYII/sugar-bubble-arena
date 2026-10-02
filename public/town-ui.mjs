@@ -1,3 +1,5 @@
+import { closeLobbyPage } from "./career-ui.mjs";
+import { localMode } from "./local-profile.mjs";
 import { bakeTown } from "./town-art.mjs";
 import { TOWN, TOWN_BUILDINGS, stepTown, townPath } from "./town.mjs";
 import { appearanceSheet } from "./appearance.mjs";
@@ -52,7 +54,7 @@ export function townUI({
   $("town-open").onclick = () => openLobbyPage("town-dialog");
   $("close-town").onclick = () => closeLobbyPage();
   window.addEventListener("lobby-page-change", (e) => {
-    const next = e.detail === "town-dialog" && document.body.dataset.multiplayer !== "false";
+    const next = e.detail === "town-dialog" && (localMode || document.body.dataset.multiplayer !== "false");
     if (next && !active) {
       active = true;
       send({ type: "town-enter", name: nickname() });
@@ -67,11 +69,12 @@ export function townUI({
   });
   function interact() {
     if (!near) return;
-    if (near.page) openLobbyPage(near.page);
+    if (localMode && near.page === "rooms-dialog") closeLobbyPage(true);
+    else if (near.page) openLobbyPage(near.page);
     else {
       send({ type: "town-emote" });
       $("town-hint").textContent =
-        "茶馆：欢迎休憩。可通过公共频道与附近玩家交流。";
+        localMode ? "茶馆：可在此休憩，与城镇居民挥手致意。" : "茶馆：欢迎休憩。可通过公共频道与附近玩家交流。";
     }
   }
   $("town-interact").onclick = interact;
@@ -167,10 +170,10 @@ export function townUI({
     const mobile = innerWidth <= 800,
       w = mobile ? 480 : 960,
       h = mobile ? 440 : 580;
-    if (canvas.width !== w) {
+    canvas.style.aspectRatio = `${w}/${h}`;
+    if (canvas.width !== w || canvas.height !== h) {
       canvas.width = w;
       canvas.height = h;
-      canvas.style.aspectRatio = `${w}/${h}`;
     }
     const dt = Math.min(0.05, Math.max(0, (now - lastFrame) / 1000));
     lastFrame = now;
@@ -259,7 +262,7 @@ export function townUI({
       title = near ? `E ${near.name}` : "E 设施交互";
     if (button.disabled !== !near) button.disabled = !near;
     if (button.textContent !== title) button.textContent = title;
-    const count = connected ? `· ${players.length} 人在线` : "· 连接已断开";
+    const count = localMode ? "· 单人漫游" : connected ? `· ${players.length} 人在线` : "· 连接已断开";
     if ($("town-count").textContent !== count)
       $("town-count").textContent = count;
   }

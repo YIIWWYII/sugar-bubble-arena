@@ -321,3 +321,24 @@ test("survival deadline awards humans, while complete conversion awards zombies"
   assert.equal(zombies.winner, 1);
   assert.equal(zombies.snapshot().victory, "丧尸胜利");
 });
+
+
+test("purify cures incubation without consuming an antidote and respects cooldown", () => {
+  const m=setup(); pick(m); const p=m.players[0];
+  p.skill="purify"; p.skillLevel=1; p.skillReadyAt=0; p.antidotes=0; p.infectedUntil=m.time+10;
+  assert.equal(m.useSkill(p.id),true);
+  assert.equal(p.infectedUntil,0); assert.equal(p.antidotes,0);
+  assert.ok(p.shieldUntil>m.time); assert.equal(m.useSkill(p.id),false);
+});
+test("bio practice still advances its defense timer", () => {
+  const m=setup(); pick(m); m.practice=true;
+  const before=m.remaining; m.tick(.1); assert.ok(m.remaining<before);
+});
+test("human rescue cleanses contact debuffs without requiring a bubble", () => {
+  const m=setup(); pick(m); const p=m.players[0];
+  p.skill="rescue";p.skillLevel=1;p.skillReadyAt=0;
+  p.slowUntil=p.frozenUntil=p.stunUntil=m.time+10;
+  assert.equal(m.useSkill(p.id),true);
+  assert.equal(p.slowUntil+p.frozenUntil+p.stunUntil,0);
+  assert.ok(p.shieldUntil>m.time);assert.equal(m.useSkill(p.id),false);
+});

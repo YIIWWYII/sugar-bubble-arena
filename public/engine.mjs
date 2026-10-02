@@ -224,11 +224,16 @@ export class Match {
       (p.skillReadyAt || 0) > this.time
     )
       return false;
-    if (p.skill === "rescue" ? p.status !== "trapped" : p.status !== "alive")
+    const activeRescue = ["bio", "survivor"].includes(this.map.mode);
+    if (p.skill === "rescue" ? p.status !== "trapped" && !(activeRescue && p.status === "alive") : p.status !== "alive")
       return false;
     const level = p.skillLevel - 1,
       duration = skill.duration[level];
     if (p.skill === "rescue") {
+      p.slowUntil = 0;
+      p.frozenUntil = 0;
+      p.stunUntil = 0;
+      p.slideDir = null;
       p.status = "alive";
       p.trappedUntil = 0;
       p.trappedBy = null;

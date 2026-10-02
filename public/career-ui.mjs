@@ -433,7 +433,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
         (p.faction !== "zombie" && !skill) ||
         cooldown > 0 ||
         p.status === "dead" ||
-        (p.faction !== "zombie" && p.skill === "rescue"
+        (p.faction !== "zombie" && p.skill === "rescue" && !["bio", "survivor"].includes(state.mode)
           ? p.status !== "trapped"
           : p.status !== "alive");
       const buffs = [

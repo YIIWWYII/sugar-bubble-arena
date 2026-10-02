@@ -1,26 +1,33 @@
 export function touchControls({canPlay, move, bomb, action, chat}) {
   const root = document.getElementById('touch-controls');
   const pad = root.querySelector('.touch-pad');
-  const media = matchMedia('(any-pointer: coarse), (max-width: 900px)');
+  const media = matchMedia('(pointer: coarse) and (hover: none)');
+  pad.innerHTML = '<div class="joystick-ring"><span class="joystick-thumb"></span></div><span class="joystick-label">移动</span>';
+  pad.setAttribute('aria-label','移动摇杆');
+  const thumb = pad.querySelector('.joystick-thumb');
   let pointer = null, direction = null;
   const setDirection = next => {
     if (direction === next) return;
-    direction = next;
-    for (const button of pad.querySelectorAll('button')) button.classList.toggle('held', button.dataset.dir === next);
-    move(next);
+    direction = next; move(next);
   };
-  const stop = () => { pointer = null; setDirection(null); };
-  const at = e => document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-dir]');
+  const stop = () => {
+    pointer = null; setDirection(null); thumb.style.transform = 'translate(-50%, -50%)';
+    pad.classList.remove('held');
+  };
+  const steer = e => {
+    const r = pad.getBoundingClientRect(), radius = Math.min(r.width,r.height)*.3;
+    let x=e.clientX-r.left-r.width/2, y=e.clientY-r.top-r.height/2;
+    const distance=Math.hypot(x,y), scale=Math.min(1,radius/(distance||1));
+    x*=scale;y*=scale;
+    thumb.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+    setDirection(joystickDirection(x/radius,y/radius));
+  };
   pad.addEventListener('pointerdown', e => {
     if (!canPlay() || pointer !== null) return;
-    const button = at(e); if (!button || !pad.contains(button)) return;
-    e.preventDefault(); pointer = e.pointerId; pad.setPointerCapture(pointer); setDirection(button.dataset.dir);
+    e.preventDefault(); pointer=e.pointerId; pad.setPointerCapture(pointer);pad.classList.add('held');steer(e);
   });
-  pad.addEventListener('pointermove', e => {
-    if (e.pointerId !== pointer) return;
-    const button = at(e); setDirection(button && pad.contains(button) ? button.dataset.dir : null);
-  });
-  for (const event of ['pointerup','pointercancel','lostpointercapture']) pad.addEventListener(event, e => { if (e.pointerId === pointer) stop(); });
+  pad.addEventListener('pointermove', e => { if(e.pointerId===pointer)steer(e); });
+  for(const event of ['pointerup','pointercancel','lostpointercapture']) pad.addEventListener(event,e=>{if(e.pointerId===pointer)stop();});
   window.addEventListener('blur', stop);
   window.addEventListener('resize', stop);
   document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
@@ -45,4 +52,10 @@ export function touchControls({canPlay, move, bomb, action, chat}) {
   const observer=new MutationObserver(sync);
   observer.observe(document.getElementById('combat-tools'),{attributes:true,childList:true,subtree:true,characterData:true,attributeFilter:['hidden','disabled']});
   media.addEventListener('change',sync); sync();
+}
+
+// Four-way engine movement with a circular dead zone; visual thumb remains analog.
+export function joystickDirection(x,y) {
+  if(Math.hypot(x,y)<.2)return null;
+  return Math.abs(x)>Math.abs(y) ? (x>0?'right':'left') : (y>0?'down':'up');
 }

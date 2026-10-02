@@ -1,3 +1,6 @@
+import { TOWN, stepTown, townPath, createTownNPCs, tickTownNPC } from "./town.mjs";
+import { NPC_DESIGNS } from "./appearance.mjs";
+import { RULES } from "./engine.mjs";
 import { Match } from './engine.mjs';
 import { ExpeditionMatch, validateBioOptions } from './expedition.mjs';
 import { BioMatch } from './bio.mjs';
@@ -14,8 +17,10 @@ export class LocalSession {
     this.profile = profile;
     this.emit = emit;
     this.id = 'local-player';
+    this.townNPCs = createTownNPCs(NPC_DESIGNS);
   }
   publish(full = false) {
+    if (this.town) this.emit({type:'town-state', players:[{id:this.id,...this.town,motion:this.town.input}], npcs:this.townNPCs});
     if (!this.match) return;
     const packet = {type:'state', room:'单人', host:this.id, aiLevel:this.bot?.level, ...this.match.snapshot()};
     if (full) { packet.blocks = this.match.blocks; packet.trapDuration = this.match.trapDuration; }
@@ -45,6 +50,10 @@ export class LocalSession {
     this.emit({type:'round-reward', reward, profile:publicProfile(next), save:next});
   }
   tick() {
+    if (this.town) {
+      stepTown(this.town, RULES.tick);
+      for (const npc of this.townNPCs) tickTownNPC(npc,RULES.tick,Date.now());
+    }
     if (!this.match) return;
     if (this.bot) tickBot(this.match, this.bot);
     this.match.tick();
@@ -57,7 +66,24 @@ export class LocalSession {
   handle(msg) {
     if (msg.type === 'ping') return this.emit({type:'pong', sent:msg.sent});
     if (msg.type === 'lobby') return this.emit({type:'lobby', online:0, rooms:[]});
-    if (msg.type === 'join' || msg.type === 'chat' || msg.type.startsWith('town-')) throw Error('暂未开放，敬请等待');
+    if (msg.type === 'join' || msg.type === 'chat') throw Error('暂未开放，敬请等待');
+    if (msg.type === 'town-enter') {
+      if (this.match) throw Error('请先退出对局');
+      this.town = {...TOWN.spawn, name:String(msg.name || '糖友').slice(0,12), appearance:this.profile.appearance,dir:3,input:{x:0,y:0}};
+      return this.publish();
+    }
+    if (msg.type === 'town-leave') { this.town = null; return; }
+    if (msg.type === 'town-move' && this.town && [-1,0,1].includes(msg.x) && [-1,0,1].includes(msg.y)) {
+      this.town.path=[];this.town.command=msg.command;this.town.input={x:msg.x,y:msg.y};return;
+    }
+    if (msg.type === 'town-target' && this.town && Number.isFinite(msg.x) && Number.isFinite(msg.y)) {
+      const route=townPath(this.town,msg);
+      this.town.path=route || [];this.town.input={x:0,y:0};this.town.command=msg.command;
+      this.emit({type:'town-target-result',command:msg.command,accepted:!!route});return this.publish();
+    }
+    if (msg.type === 'town-emote' && this.town) {
+      this.town.bubble='你好！';this.town.bubbleUntil=Date.now()+3000;return this.publish();
+    }
     if (msg.type === 'profile-change') {
       if (this.match) throw Error('请先退出对局再修改角色');
       const next = structuredClone(this.profile);
@@ -70,6 +96,7 @@ export class LocalSession {
       return this.emit({type:'left'});
     }
     if (msg.type === 'create') {
+      this.town = null;
       const source = this.maps.get(msg.mapId);
       if (!source) throw Error('没有找到这张地图');
       const selected = mapForMode(source, msg.mode ?? 'classic');

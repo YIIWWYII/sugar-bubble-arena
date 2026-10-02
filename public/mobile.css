@@ -102,3 +102,35 @@ body[data-multiplayer=false] #mode-online>:not(.multiplayer-notice),body[data-mu
 body[data-multiplayer=false] #mode-online .multiplayer-notice{padding:10px 0}
 
 body[data-entry=save]>:not(#account-dialog):not(script){display:none!important}
+
+/* Input device, rather than window width, decides whether touch controls appear. */
+.touch-pad{position:relative;display:block!important;width:144px;height:144px;border-radius:50%;background:#092d4877;border:2px solid #85d2eaaa;box-shadow:inset 0 0 0 10px #164f6c80;touch-action:none}
+.joystick-ring{position:absolute;inset:18px;border:1px solid #8bd8ed55;border-radius:50%}
+.joystick-thumb{position:absolute;left:50%;top:50%;width:64px;height:64px;border:3px solid #b9efff;border-radius:50%;background:linear-gradient(#6dc2e5,#247ba4);box-shadow:0 5px 0 #092e4b88;transform:translate(-50%,-50%)}
+.touch-pad.held .joystick-thumb{border-color:#ffdf67}
+.joystick-label{position:absolute;bottom:8px;left:0;width:100%;text-align:center;font-size:11px;pointer-events:none}
+#touch-bomb{border-radius:50%;min-width:84px;min-height:84px;max-width:100px;flex:none;box-shadow:0 5px 0 #7e531c;font-size:14px}
+.touch-primary{align-items:center;justify-content:flex-end}
+.survivor-card[aria-pressed=true]{border-color:#d6a323!important;box-shadow:inset 0 0 0 2px #ffdc61!important}
+body[data-local=true] #town-dialog>.multiplayer-notice{display:none}
+body[data-local=true][data-multiplayer=false] #town-dialog>.town-layout{display:grid!important;grid-template-columns:minmax(0,1fr)}
+body[data-local=true] .town-layout>aside{display:none}
+@media(pointer:fine){
+ body[data-screen=game] .app,body[data-screen=result] .app,body[data-screen=lobby] .app{width:min(960px,calc(100% - 32px),calc((100dvh - 150px)*4/3));min-width:0}
+ body[data-screen=game] #touch-controls{display:none!important}
+}
+/* One equipment cell and one scale for every character, with or without decor. */
+.hero-character,.hero-character.decorated{width:min(400px,100%);height:auto;aspect-ratio:1;object-fit:contain;image-rendering:pixelated}
+#career-dialog .career-body{grid-template-columns:minmax(280px,400px) minmax(0,1fr)}
+#career-dialog .career-hero{display:flex;flex-direction:column;align-items:center;padding:20px 12px}
+#career-dialog .career-hero>img{width:100%;height:auto;aspect-ratio:1;object-fit:contain;image-rendering:pixelated}
+.appearance-preview>img,.appearance-preview>img.decorated{width:100%;height:auto;aspect-ratio:1;object-fit:contain}
+.npc-gallery img{width:140px;height:140px;max-width:100%;object-fit:contain}
+.collection-enemy{width:120px!important;height:120px!important;object-fit:contain;image-rendering:pixelated}
+@media(max-width:800px){
+ #career-dialog .career-body{grid-template-columns:1fr}
+ #career-dialog .career-hero>img,.hero-character,.hero-character.decorated{width:240px;height:240px}
+ .appearance-preview>img,.appearance-preview>img.decorated{width:220px;height:220px}
+}
+
+body[data-local=true] #town-dialog{max-width:1024px}

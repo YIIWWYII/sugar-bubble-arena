@@ -13,6 +13,7 @@ export function setupLocalSaveUI() {
     <label class="field" style="margin-top:24px">导入存档文件<input id="save-import" type="file" accept=".json,application/json"></label>
     <p id="save-preview"></p><button id="save-confirm" class="blue-button" hidden>确认替换当前存档并重新进入</button>
     <p id="save-status" role="status"></p>`;
+  document.querySelector('.save-details p').textContent = '完成正式对局获得糖币、技能星和经验，胜利额外奖励。新档案赠送 60 糖币、3 技能星和疾风步。档案保存在当前浏览器，可通过本地存档导出、导入备份；暂不提供账号和跨设备同步。';
   let pending;
   const open = () => {
     pending = null; $('save-confirm').hidden = true; $('save-preview').textContent = '';

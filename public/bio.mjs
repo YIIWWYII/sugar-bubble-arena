@@ -9,112 +9,112 @@ export const BIO_UPGRADES = {
     family: "人类",
     description: "生命上限 +2，恢复 2 点生命。",
     max: 5,
-    icon: "item4",
+    icon: "ui-vitality",
   },
   boots: {
     name: "机动跑鞋",
     family: "人类",
     description: "移动速度 +0.35。",
     max: 4,
-    icon: "item8",
+    icon: "ui-boots",
   },
   pressure: {
     name: "高压糖芯",
     family: "人类",
     description: "糖泡对丧尸伤害 +1。",
     max: 5,
-    icon: "bomb-remote",
+    icon: "ui-pressure",
   },
   pockets: {
     name: "陷阱补给",
     family: "人类",
     description: "获得 2 个香蕉皮、2 个笑脸和 1 把叉子。",
     max: 999,
-    icon: "item23",
+    icon: "ui-pockets",
   },
   medicine: {
     name: "解毒储备",
     family: "人类",
     description: "获得 2 支解毒剂，可在潜伏期按 4 使用。",
     max: 999,
-    icon: "item24",
+    icon: "ui-medicine",
   },
   capacity: {
     name: "布防扩容",
     family: "人类",
     description: "糖泡放置上限 +1，最多 8 个。",
     max: 5,
-    icon: "item6",
+    icon: "ui-capacity",
   },
   recovery: {
     name: "急救包",
     family: "人类",
     description: "恢复 3 点生命，并获得 5 秒护盾。",
     max: 999,
-    icon: "item4",
+    icon: "ui-recovery",
   },
   claws: {
     name: "锐化利爪",
     family: "丧尸",
     description: "接触与近身攻击伤害 +1。",
     max: 3,
-    icon: "item24",
+    icon: "ui-claws",
   },
   pursuit: {
     name: "迅捷追猎",
     family: "丧尸",
     description: "移动速度 +0.3。",
     max: 4,
-    icon: "item8",
+    icon: "ui-pursuit",
   },
   carapace: {
     name: "增生甲壳",
     family: "丧尸",
     description: "生命上限 +3，恢复 3 点生命。",
     max: 6,
-    icon: "bomb-barrier",
+    icon: "ui-carapace",
   },
   tenacity: {
     name: "抗性进化",
     family: "丧尸",
     description: "在基础 30% 控制抗性上，每级再提高 10%，最高 70%。",
     max: 4,
-    icon: "bomb-frost",
+    icon: "ui-tenacity",
   },
   virulence: {
     name: "病毒强化",
     family: "丧尸",
     description: "感染目标的潜伏期缩短 1 秒，最低 4 秒。",
     max: 4,
-    icon: "item25",
+    icon: "ui-virulence",
   },
   regeneration: {
     name: "组织再生",
     family: "丧尸",
     description: "基础每 6 秒恢复 1 点生命，每级额外恢复 1 点。",
     max: 3,
-    icon: "item4",
+    icon: "ui-regeneration",
   },
   adrenaline: {
     name: "应激狂化",
     family: "丧尸",
     description: "获得 10 秒加速与 3 秒护盾。",
     max: 999,
-    icon: "item8",
+    icon: "ui-adrenaline",
   },
   growth: {
     name: "持续增生",
     family: "丧尸",
     description: "生命上限 +1，恢复 1 点生命。",
     max: 999,
-    icon: "item4",
+    icon: "ui-growth",
   },
   renewal: {
     name: "活性修复",
     family: "丧尸",
     description: "立即恢复 4 点生命。",
     max: 999,
-    icon: "item4",
+    icon: "ui-renewal",
   },
 };
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -568,7 +568,6 @@ export class BioMatch extends ExpeditionMatch {
     const p = this.players.find((p) => p.id === id);
     if (this.paused()) return false;
     if (p?.faction !== "zombie") {
-      if (p?.skill === "purify") return this.useAntidote(id);
       return super.useSkill(id);
     }
     if (p.status !== "alive" || p.skillReadyAt > this.time) return false;
@@ -842,6 +841,7 @@ export class BioMatch extends ExpeditionMatch {
     }
     Match.prototype.tick.call(this, dt);
     if (this.state !== "playing") return;
+    if (this.practice) this.remaining = Math.max(0, this.remaining - dt);
     this.elapsed += dt;
     if (this.phase === "preparation" && this.elapsed >= 20) {
       this.phase = "outbreak";
