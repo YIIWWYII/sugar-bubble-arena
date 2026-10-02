@@ -1,4 +1,3 @@
-import { closeLobbyPage } from "./career-ui.mjs";
 import { localMode } from "./local-profile.mjs";
 import { bakeTown } from "./town-art.mjs";
 import { TOWN, TOWN_BUILDINGS, stepTown, townPath } from "./town.mjs";
@@ -21,7 +20,7 @@ export function townUI({
     target = null,
     held = new Set(),
     camera = { x: 0, y: 0 },
-    near = null,
+    near = null, nearNPC = null,
     connected = true;
   const scene = bakeTown(images, manifest);
   let lastFrame = 0,
@@ -68,6 +67,7 @@ export function townUI({
     }
   });
   function interact() {
+    if (nearNPC) { stop(); send({type:"town-talk",npcId:nearNPC.id}); return; }
     if (!near) return;
     if (localMode && near.page === "rooms-dialog") closeLobbyPage(true);
     else if (near.page) openLobbyPage(near.page);
@@ -238,6 +238,7 @@ export function townUI({
           100,
           100,
         );
+      if(p.npc && p.activity && p.activity!=='散步')label(p.activity,p.x,p.y+28,'#486578',11);
       label(
         p.name + (p.id === id ? " · 我" : ""),
         p.x,
@@ -246,10 +247,11 @@ export function townUI({
         12,
       );
       if (p.bubble && p.bubbleUntil > Date.now()) {
-        const text = Array.from(p.bubble).slice(0, 22).join("");
-        const w = Math.min(290, text.length * 12 + 20);
-        rect(p.x - w / 2, p.y - 115, w, 27, "#f4fcffe6");
-        label(text, p.x, p.y - 96, "#164968", 12);
+        const text = Array.from(p.bubble).slice(0, 40).join("");
+        const lines = text.match(/.{1,18}/gu) || [''], w = Math.min(236,text.length*12+20), h=lines.length*18+12;
+        const bx=Math.max(camera.x+w/2+4,Math.min(camera.x+canvas.width-w/2-4,p.x)),by=Math.max(camera.y+4,p.y-92-h);
+        rect(bx-w/2,by,w,h,"#f4fcffe6");
+        lines.forEach((line,i)=>label(line,bx,by+18+i*18,"#164968",12));
       }
     }
     c.restore();
@@ -258,9 +260,10 @@ export function townUI({
           (b) => Math.hypot(me.x - b.x - b.w / 2, me.y - b.y - b.h - 18) < 95,
         )
       : null;
+    nearNPC=me ? visible.filter(p=>p.npc && Math.hypot(p.x-me.x,p.y-me.y)<90).sort((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)-Math.hypot(b.x-me.x,b.y-me.y))[0] : null;
     const button = $("town-interact"),
-      title = near ? `E ${near.name}` : "E 设施交互";
-    if (button.disabled !== !near) button.disabled = !near;
+      title = nearNPC ? `E 与${nearNPC.name}交谈` : near ? `E ${near.name}` : "E 设施交互";
+    button.disabled = !near && !nearNPC;
     if (button.textContent !== title) button.textContent = title;
     const count = localMode ? "· 单人漫游" : connected ? `· ${players.length} 人在线` : "· 连接已断开";
     if ($("town-count").textContent !== count)

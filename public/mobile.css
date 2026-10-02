@@ -134,3 +134,14 @@ body[data-local=true] .town-layout>aside{display:none}
 }
 
 body[data-local=true] #town-dialog{max-width:1024px}
+
+/* The same navigation moves with the active lobby page. */
+.lobby-nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+body[data-screen=home][data-lobby-page] .lobby-page:not([hidden]){position:relative;margin-left:max(144px,calc((100vw - 1480px)/2 + 112px))!important;margin-right:32px!important;width:calc(100% - 176px)!important;max-width:1368px!important;overflow:visible}
+.lobby-page>.lobby-nav{position:absolute;left:-112px;top:0;width:84px;font-family:'Fusion Pixel',sans-serif}
+.lobby-page>.lobby-nav button{border-radius:0}
+@media(max-width:800px){
+ body[data-screen=home][data-lobby-page] .lobby-page:not([hidden]){margin:90px 12px 20px!important;width:calc(100% - 24px)!important}
+ .lobby-page>.lobby-nav{left:0;top:-76px;width:100%;flex-direction:row;gap:8px;padding:0}
+ .lobby-page>.lobby-nav button{height:62px;flex:1;width:auto;flex-direction:row}
+}

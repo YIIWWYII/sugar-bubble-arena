@@ -1,4 +1,4 @@
-import { TOWN, stepTown, townPath, createTownNPCs, tickTownNPC } from "./town.mjs";
+import { TOWN, stepTown, townPath, createTownNPCs, tickTownNPC, talkTownNPC } from "./town.mjs";
 import { NPC_DESIGNS } from "./appearance.mjs";
 import { RULES } from "./engine.mjs";
 import { Match } from './engine.mjs';
@@ -81,7 +81,10 @@ export class LocalSession {
       this.town.path=route || [];this.town.input={x:0,y:0};this.town.command=msg.command;
       this.emit({type:'town-target-result',command:msg.command,accepted:!!route});return this.publish();
     }
+    if (msg.type === 'town-talk' && this.town) { talkTownNPC(this.townNPCs,this.town,msg.npcId,Date.now()); return this.publish(); }
     if (msg.type === 'town-emote' && this.town) {
+      const near=this.townNPCs.find(n=>Math.hypot(n.x-this.town.x,n.y-this.town.y)<105);
+      if(near)talkTownNPC(this.townNPCs,this.town,near.id,Date.now());
       this.town.bubble='你好！';this.town.bubbleUntil=Date.now()+3000;return this.publish();
     }
     if (msg.type === 'profile-change') {

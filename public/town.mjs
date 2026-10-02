@@ -121,9 +121,44 @@ export function stepTown(p,dt) {
 export function createTownNPCs(appearances) {
   return Object.entries(appearances).slice(0,5).map(([key,appearance],i)=>({id:`npc-${key}`,npc:true,name:appearance.name||'小镇居民',appearance,x:480+i*70,y:570,dir:3,input:{x:0,y:0},path:[],pauseUntil:0,routeIndex:i}));
 }
-const stops=[{x:480,y:360},{x:800,y:360},{x:800,y:600},{x:480,y:600},{x:640,y:850}];
+const activities = [
+  {x:480,y:360,name:'训练',line:'先练习走位，再放置糖泡。',duration:5500},
+  {x:800,y:360,name:'整理装备',line:'出发前，检查一下今天的装备。',duration:6500},
+  {x:800,y:600,name:'休息',line:'休息片刻，下一场再继续挑战。',duration:8000},
+  {x:480,y:600,name:'阅读',line:'图鉴中的每次发现都值得记录。',duration:7000},
+  {x:640,y:850,name:'观景',line:'广场的水声，总能让人放松。',duration:6000},
+];
+const conversations = [
+  ['训练时记得给自己留一条退路。','经典抢包中，自己的糖泡也会造成伤害。','想试试走位，可以进入自由练习。'],
+  ['我正在整理装备，要看看你的新装扮吗？','翅膀和坐骑只是外观，不改变碰撞范围。','角色界面可以预览装扮的四个方向。'],
+  ['刚结束训练，准备休息一会儿。','生化潜伏期内，可以使用随身解毒剂。','援助物资里可能还有其他补给。'],
+  ['我正在阅读图鉴中的地图记录。','正式对局中的发现，会在结算后记入图鉴。','收集奖励需要在图鉴中领取。'],
+  ['欢迎来到小镇。一起看看广场吧。','海盗水手可以在首领挑战的水域地图中找到。','幸存者中，糖泡和地面陷阱可以配合使用。'],
+];
+export function talkTownNPC(npcs, actor, npcId, now) {
+  const npc=npcs.find(n=>n.id===npcId);
+  if(!npc || Math.hypot(npc.x-actor.x,npc.y-actor.y)>105 || now<(npc.talkReadyAt||0))return false;
+  npc.talkReadyAt=now+700;
+  const lines=conversations[npcs.indexOf(npc)%conversations.length];
+  npc.bubble=lines[(npc.talkIndex||0)%lines.length];npc.talkIndex=(npc.talkIndex||0)+1;
+  npc.path=[];npc.input={x:0,y:0};npc.moving=false;npc.activity='交谈';npc.pauseUntil=now+6500;npc.bubbleUntil=now+6500;
+  const dx=actor.x-npc.x,dy=actor.y-npc.y;
+  npc.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?0:2):(dy>0?3:1);
+  return true;
+}
 export function tickTownNPC(p,dt,now) {
-  if(!p.path.length&&now>=p.pauseUntil){p.routeIndex=(p.routeIndex+1)%stops.length;p.path=townPath(p,stops[p.routeIndex])||[];}
+  if(!p.path.length && now<p.pauseUntil){
+    p.moving=false;
+    if(p.activity==='训练')p.dir=Math.floor(now/700)%4;
+    return;
+  }
+  if(!p.path.length){
+    p.routeIndex=(p.routeIndex+1)%activities.length;
+    p.path=townPath(p,activities[p.routeIndex])||[];p.activity='散步';
+  }
   const walking=p.path.length>0;stepTown(p,dt);
-  if(walking&&!p.path.length)p.pauseUntil=now+1800;
+  if(walking&&!p.path.length){
+    const a=activities[p.routeIndex];p.activity=a.name;p.pauseUntil=now+a.duration;
+    p.bubble=a.line;p.bubbleUntil=now+4500;p.dir=3;
+  }
 }

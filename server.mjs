@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { NPC_DESIGNS } from "./public/appearance.mjs";
-import { TOWN, stepTown, townPath, createTownNPCs, tickTownNPC } from "./public/town.mjs";
+import { TOWN, stepTown, townPath, createTownNPCs, tickTownNPC, talkTownNPC } from "./public/town.mjs";
 import { BioMatch } from "./public/bio.mjs";
 import { SurvivorMatch } from "./public/survivor.mjs";
 import http from "node:http";
@@ -431,9 +431,15 @@ wss.on("connection", (ws, req) => {
         }
         return;
       }
+      if (msg.type === "town-talk") {
+        if(ws.town && talkTownNPC(townNPCs,ws.town,msg.npcId,Date.now()))publishTown();
+        return;
+      }
       if (msg.type === "town-emote") {
         if (ws.town && Date.now() - (ws.lastWave || 0) > 1500) {
           ws.lastWave = Date.now();
+          const near=townNPCs.find(n=>Math.hypot(n.x-ws.town.x,n.y-ws.town.y)<105);
+          if(near)talkTownNPC(townNPCs,ws.town,near.id,Date.now());
           ws.town.bubble = "你好！";
           ws.town.bubbleUntil = Date.now() + 3000;
           publishTown();

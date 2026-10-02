@@ -30,3 +30,19 @@ test('NPCs patrol traversable paths, pause, and continue',()=>{
  for(let i=0;i<300;i++){tickTownNPC(npc,1/60,i*1000/60);assert(townWalkable(npc.x,npc.y));}
  assert(Math.hypot(npc.x-first.x,npc.y-first.y)>10);
 });
+
+
+test('town residents stop for activities, converse in range and resume walking', async()=>{
+  const {createTownNPCs,tickTownNPC,talkTownNPC}=await import('../public/town.mjs');
+  const npcs=createTownNPCs({a:{name:'居民'}}),n=npcs[0];
+  let now=10000;
+  for(let i=0;i<600 && !n.activity?.includes('装备');i++){now+=100;tickTownNPC(n,.1,now);}
+  assert.equal(n.activity,'整理装备');assert.equal(n.moving,false);assert.ok(n.bubble);
+  assert.equal(talkTownNPC(npcs,{x:0,y:0},n.id,now),false);
+  assert.equal(talkTownNPC(npcs,{x:n.x+20,y:n.y},n.id,now),true);
+  const first=n.bubble;assert.equal(n.activity,'交谈');assert.equal(n.dir,0);
+  assert.equal(talkTownNPC(npcs,n,n.id,now+100),false);
+  assert.equal(talkTownNPC(npcs,n,n.id,now+800),true);assert.notEqual(n.bubble,first);
+  tickTownNPC(n,.1,now+1000);assert.equal(n.moving,false);
+  tickTownNPC(n,.1,now+8000);assert.equal(n.activity,'散步');assert.ok(n.path.length);
+});

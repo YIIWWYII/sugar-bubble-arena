@@ -25,6 +25,20 @@ const lobbyPages = [
   "account-dialog",
 ];
 let pageOpener = null;
+let sharedNav;
+function syncNavigation(active) {
+  if (!sharedNav) return;
+  const selection = active === 'guide-dialog' ? 'guide-open' : active === 'town-dialog' ? 'town-open' : ['career-dialog','appearance-dialog'].includes(active) ? 'career-open' : 'battle-open';
+  for (const button of sharedNav.querySelectorAll('button')) {
+    button.classList.toggle('nav-current',button.id===selection);
+    if(button.id===selection)button.setAttribute('aria-current','page');
+    else button.removeAttribute('aria-current');
+  }
+  sharedNav.hidden = firstDesignRequired;
+  if (active) document.getElementById(active).prepend(sharedNav);
+  else document.getElementById('home-panel').prepend(sharedNav);
+}
+
 let firstDesignRequired = false;
 function renderLobbyPage(id) {
   if (firstDesignRequired) id = "appearance-dialog";
@@ -41,6 +55,7 @@ function renderLobbyPage(id) {
     delete document.body.dataset.lobbyPage;
     if (document.body.dataset.screen === "home") pageOpener?.focus();
   }
+  syncNavigation(active);
   window.dispatchEvent(
     new CustomEvent("lobby-page-change", { detail: active }),
   );
@@ -73,6 +88,9 @@ window.addEventListener("keydown", (event) => {
 });
 
 export function careerUI(manifest, send, images, mapThumbnail) {
+  sharedNav = document.querySelector('.lobby-nav');
+  document.getElementById('battle-open').onclick = () => closeLobbyPage(true);
+
   const $ = (id) => document.getElementById(id);
   const initialPage = `${location.hash.slice(1)}-dialog`;
   if (lobbyPages.includes(initialPage)) {
