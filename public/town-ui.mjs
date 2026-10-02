@@ -137,7 +137,17 @@ export function townUI({
     else { const feedback=marker;stop();marker=feedback; }
     canvas.focus();
   });
-  $("town-chat-form").onsubmit = (e) => {
+  const channel=$('town-chat').parentElement;
+  if(localMode)channel.querySelector('h2').textContent='小镇聊天 · 本地';
+  const note=document.createElement('p');note.className='town-chat-note';
+  note.textContent=localMode?'仅当前游戏可见，可与附近居民交流。刷新页面后聊天记录清空。':'与小镇中的玩家交流。';channel.querySelector('h2').after(note);
+  const emotes=document.createElement('div');emotes.className='town-emotes';emotes.setAttribute('aria-label','小镇表情');
+  for(const [icon,label] of [['👋','挥手'],['😊','开心'],['😂','大笑'],['👍','赞同'],['🎉','庆祝'],['☕','休息']]){
+    const button=document.createElement('button');button.type='button';button.textContent=icon;button.title=label;button.setAttribute('aria-label',label);
+    button.onclick=()=>{stop();send({type:'chat',text:icon,name:nickname()});};emotes.append(button);
+  }
+  $('town-chat-form').before(emotes);
+  $('town-chat-form').onsubmit = (e) => {
     e.preventDefault();
     const input = $("town-chat-input");
     if (input.value.trim()) {
@@ -153,6 +163,7 @@ export function townUI({
         b = document.createElement("b");
       b.textContent = m.name + "：";
       p.append(b, document.createTextNode(m.text));
+      if(Array.from(m.text).length<=3)p.classList.add("town-chat-emote");
       log.append(p);
     }
     log.scrollTop = log.scrollHeight;

@@ -17,6 +17,7 @@ export class LocalSession {
     this.profile = profile;
     this.emit = emit;
     this.id = 'local-player';
+    this.townChat = [];
     this.townNPCs = createTownNPCs(NPC_DESIGNS);
   }
   publish(full = false) {
@@ -25,6 +26,10 @@ export class LocalSession {
     const packet = {type:'state', room:'单人', host:this.id, aiLevel:this.bot?.level, ...this.match.snapshot()};
     if (full) { packet.blocks = this.match.blocks; packet.trapDuration = this.match.trapDuration; }
     this.emit(packet);
+  }
+  addTownMessage(name,text) {
+    const packet={type:'chat',scope:'town',name,text,time:Date.now()};
+    this.townChat.push(packet);this.townChat=this.townChat.slice(-30);this.emit(packet);
   }
   start() {
     this.settle();
@@ -66,10 +71,21 @@ export class LocalSession {
   handle(msg) {
     if (msg.type === 'ping') return this.emit({type:'pong', sent:msg.sent});
     if (msg.type === 'lobby') return this.emit({type:'lobby', online:0, rooms:[]});
-    if (msg.type === 'join' || msg.type === 'chat') throw Error('暂未开放，敬请等待');
+    if (msg.type === 'join' || (msg.type === 'chat' && !this.town)) throw Error('暂未开放，敬请等待');
+    if (msg.type === 'chat' && this.town) {
+      if(typeof msg.text!=='string')return;
+      const text=Array.from(msg.text.replace(/[\u0000-\u001f\u007f]/g,' ').trim()).slice(0,140).join('');
+      if(!text)return;
+      this.town.bubble=text;this.town.bubbleUntil=Date.now()+6000;
+      this.addTownMessage(this.town.name,text);
+      const npc=this.townNPCs.find(n=>Math.hypot(n.x-this.town.x,n.y-this.town.y)<105);
+      if(npc && talkTownNPC(this.townNPCs,this.town,npc.id,Date.now()))this.addTownMessage(npc.name,npc.bubble);
+      return this.publish();
+    }
     if (msg.type === 'town-enter') {
       if (this.match) throw Error('请先退出对局');
       this.town = {...TOWN.spawn, name:String(msg.name || '糖友').slice(0,12), appearance:this.profile.appearance,dir:3,input:{x:0,y:0}};
+      this.emit({type:'town-history',messages:this.townChat});
       return this.publish();
     }
     if (msg.type === 'town-leave') { this.town = null; return; }
@@ -81,7 +97,7 @@ export class LocalSession {
       this.town.path=route || [];this.town.input={x:0,y:0};this.town.command=msg.command;
       this.emit({type:'town-target-result',command:msg.command,accepted:!!route});return this.publish();
     }
-    if (msg.type === 'town-talk' && this.town) { talkTownNPC(this.townNPCs,this.town,msg.npcId,Date.now()); return this.publish(); }
+    if (msg.type === 'town-talk' && this.town) { if(talkTownNPC(this.townNPCs,this.town,msg.npcId,Date.now())) { const npc=this.townNPCs.find(n=>n.id===msg.npcId);this.addTownMessage(npc.name,npc.bubble); } return this.publish(); }
     if (msg.type === 'town-emote' && this.town) {
       const near=this.townNPCs.find(n=>Math.hypot(n.x-this.town.x,n.y-this.town.y)<105);
       if(near)talkTownNPC(this.townNPCs,this.town,near.id,Date.now());

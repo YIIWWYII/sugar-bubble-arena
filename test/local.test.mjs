@@ -138,3 +138,17 @@ for(const [mode,mapId] of Object.entries({classic:'bun06_8',boss:'boss-court',bi
     for(const field of ['hasteUntil','shieldUntil','surgeUntil','magnetUntil'])assert.ok(p[field]>m.time,field);
   });
 }
+
+
+test('local town chat accepts text and emotes, preserves history and stays town-only',()=>{
+ const {session,packets}=fixture();session.receive({type:'town-enter'});
+ session.receive({type:'chat',text:'你好'});session.receive({type:'chat',text:'😊'});
+ assert.ok(packets.some(p=>p.type==='chat' && p.text==='你好' && p.scope==='town'));
+ assert.ok(packets.some(p=>p.type==='chat' && p.text==='😊'));
+ session.receive({type:'town-leave'});session.receive({type:'town-enter'});
+ assert.ok(packets.findLast(p=>p.type==='town-history').messages.some(p=>p.text==='你好'));
+ for(let i=0;i<40;i++)session.receive({type:'chat',text:String(i)});
+ assert.equal(session.townChat.length,30);
+ session.receive({type:'town-leave'});session.receive({type:'chat',text:'outside'});
+ assert.equal(packets.at(-1).type,'error');
+});
