@@ -1,6 +1,6 @@
 import { localMode } from "./local-profile.mjs";
 import { bakeTown } from "./town-art.mjs";
-import { TOWN, TOWN_BUILDINGS, stepTown, townPath } from "./town.mjs";
+import { TOWN, TOWN_BUILDINGS, stepTown, townPath, townEntrance, townClickedBuilding } from "./town.mjs";
 import { appearanceSheet } from "./appearance.mjs";
 export function townUI({
   send,
@@ -127,10 +127,12 @@ export function townUI({
     };
     if(!local || !connected) return;
     held.clear();
+    const building=townClickedBuilding(target);
+    if(building) { target=townEntrance(building); dismissedEntrance=null; }
     const route=townPath(local,target);
     marker={...target,valid:!!route,until:performance.now()+1200};
     local.path=route||[];local.input={x:0,y:0};
-    $("town-hint").textContent=route?'正在前往目标位置':'此处无法到达，请点击道路或空地。';
+    $("town-hint").textContent=route?(building?`正在前往${building.name}入口`:'正在前往目标位置'):'此处无法到达，请点击道路或空地。';
     if(route)send({type:'town-target',...target,command:++command});
     else { const feedback=marker;stop();marker=feedback; }
     canvas.focus();

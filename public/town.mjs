@@ -38,6 +38,12 @@ export const TOWN_BUILDINGS = [
     color: "#d67c89",
   },
 ];
+export function townEntrance(building) {
+  return {x:building.x+building.w/2,y:building.y+building.h+28};
+}
+export function townClickedBuilding(point) {
+  return TOWN_BUILDINGS.find(b=>point.x>=b.x-12 && point.x<=b.x+b.w+12 && point.y>=b.y-40 && point.y<=b.y+b.h+42);
+}
 export function townWalkable(x, y) {
   return (
     Number.isFinite(x) &&

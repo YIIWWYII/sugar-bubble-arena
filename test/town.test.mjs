@@ -46,3 +46,13 @@ test('town residents stop for activities, converse in range and resume walking',
   tickTownNPC(n,.1,now+1000);assert.equal(n.moving,false);
   tickTownNPC(n,.1,now+8000);assert.equal(n.activity,'散步');assert.ok(n.path.length);
 });
+
+
+test('clicking each building routes to a walkable doorway',async()=>{
+ const {TOWN_BUILDINGS,TOWN,townEntrance,townClickedBuilding,townPath,townWalkable}=await import('../public/town.mjs');
+ for(const b of TOWN_BUILDINGS){
+  assert.equal(townClickedBuilding({x:b.x+b.w/2,y:b.y+b.h-20}),b);
+  const goal=townEntrance(b);assert.ok(townWalkable(goal.x,goal.y));
+  const path=townPath(TOWN.spawn,goal);assert.ok(path?.length);assert.deepEqual(path.at(-1),goal);
+ }
+});

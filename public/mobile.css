@@ -153,3 +153,5 @@ body[data-screen=home][data-lobby-page] .lobby-page:not([hidden]){position:relat
 #town-entry strong{display:block;margin-bottom:12px;font-size:18px}
 #town-entry>div{display:flex;gap:10px;justify-content:center}
 #tea-dialog{margin:26px auto;min-height:400px;background:#ddf5ff;border:3px solid #58bddd}
+
+#town-entry{position:fixed;bottom:max(20px,env(safe-area-inset-bottom));z-index:90;max-width:calc(100vw - 24px)}
