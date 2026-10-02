@@ -210,7 +210,7 @@ body[data-local=true] .town-layout>aside{max-height:calc(100dvh - 180px);overflo
 #town-profile-open{display:none}
 @media(max-height:540px) and (orientation:landscape) and (pointer:coarse){#town-profile-open{display:block;max-width:175px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;padding:6px}#close-town{display:none}.town-controls span{display:none}.town-controls button{min-height:32px;padding:6px}.town-controls{margin-top:6px}.town-layout #town-canvas{aspect-ratio:640/360}#town-dialog>.window-title{padding:6px!important}.town-layout>aside{scrollbar-width:thin}}
 
-@media(max-width:800px) and (orientation:portrait){body[data-screen=home][data-lobby-page] #account-dialog:not([hidden]){margin:90px 12px 20px!important;width:calc(100% - 24px)!important}}
+@media(max-width:800px){body[data-screen=home][data-lobby-page] #account-dialog:not([hidden]){margin:90px 12px 20px!important;width:calc(100% - 24px)!important}}
 @media(max-height:540px) and (orientation:landscape) and (pointer:coarse){
  body[data-screen=home][data-lobby-page] #account-dialog:not([hidden]){margin:12px 10px 12px 88px!important;width:calc(100% - 98px)!important}
  body[data-lobby-page] .app{margin-left:88px!important;width:calc(100% - 98px)!important}body[data-lobby-page] .topbar .connection{display:none}body[data-lobby-page] .brand-mark{font-size:18px}
