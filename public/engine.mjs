@@ -339,6 +339,7 @@ export class Match {
     this.flames = [];
     this.rev.blocks++; // 开局重建地图，必须让客户端重新拿到 blocks
     this.items = [];
+    this.supplySchedule=(this.map.supplyNodes || []).map(n=>3+n.first);
     this.buns = [];
     this.stored = [
       [3, 0],
@@ -1532,6 +1533,12 @@ export class Match {
         return;
       }
     }
+    for(const [index,node] of (this.map.supplyNodes || []).entries()){
+      if(this.time < this.supplySchedule[index])continue;
+      this.supplySchedule[index]=this.time+node.interval;
+      if(this.solid(node.x,node.y) || this.bombAt(node.x,node.y) || this.flameAt(node.x,node.y) || this.items.some(i=>i.x===node.x && i.y===node.y))continue;
+      this.items.push({id:++this.serial,x:node.x,y:node.y,kind:node.kind,availableAt:this.time,supplyNode:index});
+    }
     this.flames = this.flames.filter((f) => f.until > this.time);
     for (const [k, until] of this.rubble)
       if (until <= this.time) this.rubble.delete(k);
@@ -1599,6 +1606,7 @@ export class Match {
       bombs: this.bombs,
       flames: this.flames,
       items: this.items,
+      supplySchedule: this.supplySchedule,
       hiddenItems:
         this.players[0] && this.trainingEnabled(this.players[0], "reveal")
           ? this.hiddenItems.filter((i) => this.blockAt(i.x, i.y) > 0)

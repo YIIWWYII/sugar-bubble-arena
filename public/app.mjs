@@ -1313,6 +1313,21 @@ function paintDefense(context, z, ox = 0, oy = 0) {
   context.fillRect(cx - 4, cy - 13, 8, 26);
   context.restore();
 }
+function paintTactics(context,selected,ox=0,oy=0,preview=false){
+  context.save();
+  for(const z of selected.tacticalZones || []){
+    const color={risk:'#efb964',route:'#80d8ed',defense:'#71dfad'}[z.type];
+    context.fillStyle=color+'24';context.fillRect(ox+z.x*40,oy+z.y*40,z.w*40,z.h*40);
+    if(!preview){context.fillStyle='#194b63';context.font='11px "Fusion Pixel",sans-serif';context.textAlign='center';context.fillText(z.label,ox+(z.x+z.w/2)*40,oy+z.y*40+13);}
+  }
+  for(const [i,n] of (selected.supplyNodes || []).entries()){
+    const x=ox+(n.x+.5)*40,y=oy+(n.y+.5)*40;
+    context.strokeStyle='#ffe48b';context.lineWidth=2;context.strokeRect(x-14,y-14,28,28);
+    context.fillStyle='#ffe48b';context.fillRect(x-3,y-3,6,6);
+    if(!preview){const seconds=Math.max(0,Math.ceil((state.supplySchedule?.[i] || n.first+3)-state.time));const available=state.items?.some(item=>item.supplyNode===i);context.font='10px "Fusion Pixel",sans-serif';context.textAlign='center';context.fillStyle='#f9f6cf';context.fillText(available?'补给':`${seconds}s`,x,y+25);}
+  }
+  context.restore();
+}
 function paintLobbyMap(preview, selected) {
   preview.clearRect(0, 0, 150, 130);
   preview.save();
@@ -1358,6 +1373,7 @@ function paintLobbyMap(preview, selected) {
             (y + 3) * 40 - manifest[`tile${building}`].h,
           );
       }
+  paintTactics(preview,selected,0,0,true);
   paintDefense(preview, selected.defenseZone);
   preview.restore();
 }
@@ -1498,6 +1514,7 @@ for (const selected of maps.values()) {
         selected.supportedModes.map((mode) => GAME_MODES[mode]).join(" / ")
       : "");
   button.append(preview, title, caption);
+  if(selected.strategy){const tactics=document.createElement('small');tactics.className='map-strategy';tactics.textContent=selected.strategy;button.append(tactics);}
   button.onclick = () => {
     $("map-select").value = selected.id;
     mapPreview();
@@ -1665,6 +1682,7 @@ function render(now) {
         OX + x * T,
         OY + y * T,
       );
+  paintTactics(ctx,map,OX,OY);
   if (map.mode !== "water11")
     for (let y = minY; y < maxY; y++)
       for (let x = minX; x < maxX; x++) {
