@@ -22,13 +22,14 @@ const lobbyPages = [
   "guide-dialog",
   "appearance-dialog",
   "town-dialog",
+  "tea-dialog",
   "account-dialog",
 ];
 let pageOpener = null;
 let sharedNav;
 function syncNavigation(active) {
   if (!sharedNav) return;
-  const selection = active === 'guide-dialog' ? 'guide-open' : active === 'town-dialog' ? 'town-open' : ['career-dialog','appearance-dialog'].includes(active) ? 'career-open' : 'battle-open';
+  const selection = active === 'guide-dialog' ? 'guide-open' : ['town-dialog','tea-dialog'].includes(active) ? 'town-open' : ['career-dialog','appearance-dialog'].includes(active) ? 'career-open' : 'battle-open';
   for (const button of sharedNav.querySelectorAll('button')) {
     button.classList.toggle('nav-current',button.id===selection);
     if(button.id===selection)button.setAttribute('aria-current','page');

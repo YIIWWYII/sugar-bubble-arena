@@ -20,7 +20,7 @@ export function townUI({
     target = null,
     held = new Set(),
     camera = { x: 0, y: 0 },
-    near = null, nearNPC = null,
+    near = null, nearNPC = null, dismissedEntrance = null,
     connected = true;
   const scene = bakeTown(images, manifest);
   let lastFrame = 0,
@@ -62,20 +62,24 @@ export function townUI({
       stop();
       send({ type: "town-leave" });
       active = false;
+      near=null; dismissedEntrance=null; $("town-entry").hidden=true;
       players = [];
       local=null;poses.clear();npcs=[];
     }
   });
+  function enterBuilding() {
+    if (!near || dismissedEntrance === near.name) return;
+    const destination=near.page;
+    stop();
+    if (localMode && destination === 'rooms-dialog') closeLobbyPage(true);
+    else openLobbyPage(destination);
+  }
+  $('town-entry-confirm').onclick = enterBuilding;
+  $('town-entry-cancel').onclick = () => { dismissedEntrance=near?.name; $('town-entry').hidden=true; };
+  for(const key of ['close-tea','tea-return'])$(key).onclick=()=>openLobbyPage('town-dialog');
   function interact() {
-    if (nearNPC) { stop(); send({type:"town-talk",npcId:nearNPC.id}); return; }
-    if (!near) return;
-    if (localMode && near.page === "rooms-dialog") closeLobbyPage(true);
-    else if (near.page) openLobbyPage(near.page);
-    else {
-      send({ type: "town-emote" });
-      $("town-hint").textContent =
-        localMode ? "茶馆：可在此休憩，与城镇居民挥手致意。" : "茶馆：欢迎休憩。可通过公共频道与附近玩家交流。";
-    }
+    if (near) { dismissedEntrance=null; $('town-entry').hidden=false; return; }
+    if (nearNPC) { stop(); send({type:'town-talk',npcId:nearNPC.id}); }
   }
   $("town-interact").onclick = interact;
   $("town-wave").onclick = () => send({ type: "town-emote" });
@@ -260,9 +264,12 @@ export function townUI({
           (b) => Math.hypot(me.x - b.x - b.w / 2, me.y - b.y - b.h - 18) < 95,
         )
       : null;
+    if(!near || dismissedEntrance!==near.name) dismissedEntrance=null;
+    $('town-entry').hidden=!near || dismissedEntrance===near.name;
+    if(near) $('town-entry-title').textContent=`是否进入${near.name}？`;
     nearNPC=me ? visible.filter(p=>p.npc && Math.hypot(p.x-me.x,p.y-me.y)<90).sort((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)-Math.hypot(b.x-me.x,b.y-me.y))[0] : null;
     const button = $("town-interact"),
-      title = nearNPC ? `E 与${nearNPC.name}交谈` : near ? `E ${near.name}` : "E 设施交互";
+      title = near ? `E 进入${near.name}` : nearNPC ? `E 与${nearNPC.name}交谈` : "E 设施交互";
     button.disabled = !near && !nearNPC;
     if (button.textContent !== title) button.textContent = title;
     const count = localMode ? "· 单人漫游" : connected ? `· ${players.length} 人在线` : "· 连接已断开";

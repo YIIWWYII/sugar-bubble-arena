@@ -147,3 +147,9 @@ body[data-screen=home][data-lobby-page] .lobby-page:not([hidden]){position:relat
 }
 
 @media(min-width:801px){.lobby-page>.lobby-nav{position:fixed;left:max(32px,calc((100vw - 1480px)/2));top:112px;z-index:30}}
+
+.town-viewport{position:relative}
+#town-entry{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 20px);padding:16px;background:#e5f8fff2;border:3px solid #58bddd;box-shadow:4px 4px #103c5770;color:#184968;text-align:center}
+#town-entry strong{display:block;margin-bottom:12px;font-size:18px}
+#town-entry>div{display:flex;gap:10px;justify-content:center}
+#tea-dialog{margin:26px auto;min-height:400px;background:#ddf5ff;border:3px solid #58bddd}

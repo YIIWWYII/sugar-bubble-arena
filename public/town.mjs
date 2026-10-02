@@ -16,7 +16,7 @@ export const TOWN_BUILDINGS = [
     w: 240,
     h: 170,
     name: "装扮工坊",
-    page: "career-dialog",
+    page: "appearance-dialog",
     color: "#ae76b5",
   },
   {
@@ -34,7 +34,7 @@ export const TOWN_BUILDINGS = [
     w: 240,
     h: 170,
     name: "糖果茶馆",
-    page: null,
+    page: "tea-dialog",
     color: "#d67c89",
   },
 ];
