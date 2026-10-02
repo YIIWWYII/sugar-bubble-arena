@@ -253,7 +253,7 @@ export function townUI({
         12,
       );
       if (p.bubble && p.bubbleUntil > Date.now()) {
-        const text = Array.from(p.bubble).slice(0, 40).join("");
+        const text = Array.from(p.bubble).slice(0, 80).join("");
         const lines = text.match(/.{1,18}/gu) || [''], w = Math.min(236,text.length*12+20), h=lines.length*18+12;
         const bx=Math.max(camera.x+w/2+4,Math.min(camera.x+canvas.width-w/2-4,p.x)),by=Math.max(camera.y+4,p.y-92-h);
         rect(bx-w/2,by,w,h,"#f4fcffe6");

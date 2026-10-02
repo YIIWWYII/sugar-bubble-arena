@@ -56,3 +56,18 @@ test('clicking each building routes to a walkable doorway',async()=>{
   const path=townPath(TOWN.spawn,goal);assert.ok(path?.length);assert.deepEqual(path.at(-1),goal);
  }
 });
+
+
+test('each resident has twelve ordinary lines and rare dialogue cannot repeat',async()=>{
+ const {talkTownNPC}=await import('../public/town.mjs');
+ const npcs=createTownNPCs(Object.fromEntries(['a','b','c','d','e'].map(k=>[k,{name:k}])));
+ for(const n of npcs){
+  const lines=new Set();
+  for(let i=0;i<12;i++){assert.ok(talkTownNPC(npcs,n,n.id,10000+i*1000,()=>1));lines.add(n.bubble);}
+  assert.equal(lines.size,12);
+ }
+ const n=npcs[1];
+ assert.ok(talkTownNPC(npcs,n,n.id,30000,()=>0));assert.equal(n.rareSpoken,true);
+ const rare=n.bubble;assert.ok(n.bubbleUntil>=30000+rare.length*220);
+ assert.ok(talkTownNPC(npcs,n,n.id,31000,()=>0));assert.notEqual(n.bubble,rare);
+});
