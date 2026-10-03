@@ -38,7 +38,7 @@ export function touchControls({canPlay, move, bomb, action, chat}) {
   document.getElementById('touch-bomb').onclick = e => { if(e.detail === 0 && canPlay()) bomb(); };
   document.getElementById('touch-chat').onclick = chat;
   for(const button of root.querySelectorAll('[data-touch-action]')) button.onclick = () => { if(canPlay()) action(button.dataset.touchAction); };
-  const links = [['touch-character','character-skill-use'],['touch-skill','skill-use'],['touch-antidote','bio-antidote'],['touch-cycle','cycle-bomb'],['touch-detonate','detonate-bomb']];
+  const links = [['touch-character','character-skill-use'],['touch-skill','skill-use'],['touch-dome','bio-dome'],['touch-antidote','bio-antidote'],['touch-cycle','cycle-bomb'],['touch-detonate','detonate-bomb']];
   for(const [target,source] of links) document.getElementById(target).onclick = () => { if(canPlay()) document.getElementById(source).click(); };
   const sync = () => {
     root.hidden = !media.matches || document.body.dataset.screen !== 'game' || !!document.body.dataset.lobbyPage;

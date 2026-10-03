@@ -77,12 +77,14 @@ export function enterGame() {
 
 function enterLocalGame() {
   const $ = id => document.getElementById(id);
-  document.querySelector('#entry-screen h1').textContent = '单人游戏';
-  document.querySelector('#entry-screen h1 + p').textContent = '体验单人挑战与 AI 对战，进度自动保存在当前浏览器。';
+  document.querySelector('#entry-screen h1').textContent = '开始单人游戏';
+  document.querySelector('#entry-screen h1 + p').textContent = '联机模式暂未开放，您可以先体验单人挑战与 AI 对战。';
+  const notice = $('entry-local-notice');
+  notice.hidden = false;
   $('entry-form').hidden = true;
   document.querySelector('.entry-links').hidden = true;
-  document.querySelector('.entry-note').textContent = '暂不提供账号同步。请定期导出存档，清除浏览器数据可能导致进度丢失。';
-  $('entry-guest').textContent = '进入游戏';
+  document.querySelector('.entry-note').textContent = '单人数据会保存在当前设备。清除浏览器数据可能导致进度丢失，请定期导出存档。';
+  $('entry-guest').textContent = '进入单人模式';
   return new Promise(resolve => {
     $('entry-guest').onclick = () => {
       try {

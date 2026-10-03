@@ -154,6 +154,7 @@ export class SurvivorMatch extends ExpeditionMatch {
         hp: characterHealth(p),
         maxHp: characterHealth(p),
         ranks: {},
+        acquired: [],
         offers: ["force", "frost", "chain"],
         offerId: ++this.serial,
         rerolls: 2,
@@ -222,6 +223,7 @@ export class SurvivorMatch extends ExpeditionMatch {
     const u = SURVIVOR_UPGRADES[key];
     if (!u || (r.ranks[key] || 0) >= u.max) return false;
     r.ranks[key] = (r.ranks[key] || 0) + 1;
+    r.acquired = [...(r.acquired || []), u.name].slice(-8);
     r.offers = [];
     if (key === "health" || key === "reservoir") {
       r.maxHp = Math.min(20, r.maxHp + 1);

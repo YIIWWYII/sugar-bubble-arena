@@ -55,7 +55,8 @@ export function townUI({
   $("town-profile-open").onclick=()=>$("account-open").click();
   $("close-town").onclick = () => closeLobbyPage();
   window.addEventListener("lobby-page-change", (e) => {
-    const next = e.detail === "town-dialog" && (localMode || document.body.dataset.multiplayer !== "false");
+    // 小镇是单人可用的本地活动区；多人关闭时仍允许玩家和 NPC 漫游。
+    const next = e.detail === "town-dialog";
     if (next && !active) {
       local=null;players=[];npcs=[];renderedNPCs=[];poses.clear();near=null;nearNPC=null;
       active = true;

@@ -175,6 +175,7 @@ export class LocalSession {
     switch (msg.type) {
       case 'input': match.setInput(this.id,msg); return;
       case 'bio-antidote': match.useAntidote?.(this.id); break;
+      case 'bio-dome': match.placeDome?.(this.id); break;
       case 'cycle-bomb': match.cycleBomb?.(this.id); break;
       case 'detonate': match.detonate?.(this.id); break;
       case 'character-skill': if(!match.useCharacterSkill(this.id))throw Error('角色技能冷却中，或当前状态无法使用'); break;

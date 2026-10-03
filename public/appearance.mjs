@@ -1,6 +1,10 @@
 // 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
 // 玩家编辑、服务端校验与 NPC 配方共用有限选项。
 export const APPEARANCE_OPTIONS = {
+  gender: {
+    label: "性别形象",
+    values: ["男性", "女性", "中性"],
+  },
   hair: {
     label: "发色",
     values: ["赤红", "深蓝", "栗棕", "银白", "墨黑", "青绿"],
@@ -58,6 +62,7 @@ export const APPEARANCE_OPTIONS = {
   },
 };
 export const DEFAULT_APPEARANCE = {
+  gender: 0,
   hair: 0,
   skin: 0,
   outfit: 0,
@@ -137,7 +142,7 @@ export function validateAppearance(value) {
   for (const [key, option] of Object.entries(APPEARANCE_OPTIONS)) {
     if (
       value[key] === undefined &&
-      ["wings", "back", "held", "shoes", "aura", "mount"].includes(key)
+      ["gender", "wings", "back", "held", "shoes", "aura", "mount"].includes(key)
     ) {
       result[key] = 0;
       continue;
@@ -330,6 +335,18 @@ export function appearanceSheet(image, key, recipe = DEFAULT_APPEARANCE) {
           c.fillRect(x + 53, 57, 1, 1);
         }
       }
+    }
+  }
+  // 女性形象使用额外的侧束发和发饰轮廓，与现有像素身体保持同一套比例。
+  if (a.gender === 1) {
+    c.fillStyle = APPEARANCE_OPTIONS.hair.colors[a.hair];
+    for (let f = 0; f < canvas.width / 100; f++) {
+      const x = f * 100;
+      c.fillRect(x + 24, 34, 6, 18);
+      c.fillRect(x + 70, 34, 6, 18);
+      c.fillStyle = "#ffe672";
+      c.fillRect(x + 24, 45, 6, 2);
+      c.fillStyle = APPEARANCE_OPTIONS.hair.colors[a.hair];
     }
   }
   const decorated = decorateSheet(canvas, key, a);

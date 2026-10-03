@@ -589,6 +589,8 @@ function handleEvent(e) {
           e.kind
         ],
     );
+  if (e.type === "aid-open" && e.player === myId)
+    toast(`获得援助物资：${e.name}`);
   if (e.type === "start") {
     stopResult();
     play("ReadyGo.wav", 0.5);
@@ -740,10 +742,15 @@ function updateSurvivorUI() {
     button.append(tag, icon, title, detail, condition);
     button.tabIndex = -1;
     button.onclick = () => {
-      if (!touchDevice() || performance.now()<pickReadyAt) return;
+      if (performance.now() < pickReadyAt) return;
       mobilePick = i;
-      for(const card of container.children)card.setAttribute('aria-pressed',String(card===button));
-      $('survivor-confirm').disabled = false;
+      for (const card of container.children)
+        card.setAttribute('aria-pressed', String(card === button));
+      if (touchDevice()) {
+        $('survivor-confirm').disabled = false;
+      } else {
+        chooseUpgrade(i);
+      }
     };
     container.append(button);
   }
@@ -759,6 +766,7 @@ $('survivor-confirm').onclick = () => { if(touchDevice() && mobilePick !== null)
 window.addEventListener('keyup',e=>heldPhysicalKeys.delete(e.code));
 window.addEventListener('blur',()=>heldPhysicalKeys.clear());
 $("bio-antidote").onclick = () => send({ type: "bio-antidote" });
+$("bio-dome").onclick = () => send({ type: "bio-dome" });
 $("survivor-pick-leave").onclick = () => send({ type: "leave" });
 $("survivor-reroll").onclick = () =>
   send({
@@ -793,6 +801,25 @@ function updateUI() {
   $("bio-antidote").textContent = `4 解毒剂 · ${self?.antidotes || 0}`;
   $("bio-antidote").disabled =
     !self?.antidotes || !(self.infectedUntil > state.time);
+  const dome = self?.dome;
+  $("bio-dome").hidden = state.mode !== "bio" || self?.faction === "zombie";
+  $("bio-dome").textContent = dome?.active
+    ? `G 安全泡泡 · ${Math.ceil(dome.hp)}/${dome.maxHp}`
+    : self?.domeCooldownAt > state.time
+      ? `G 重建冷却 · ${Math.ceil(self.domeCooldownAt - state.time)}s`
+      : "G 重建安全泡泡";
+  $("bio-dome").disabled = !!dome?.active || (self?.domeCooldownAt || 0) > state.time || self?.status !== "alive";
+  const domeStatus = $("bio-dome-status");
+  domeStatus.hidden = state.mode !== "bio" || self?.faction === "zombie";
+  if (!domeStatus.hidden) {
+    const cooldown = Math.max(0, (self?.domeCooldownAt || 0) - state.time);
+    domeStatus.textContent = dome?.active
+      ? `罩体 ${Math.ceil(dome.hp)}/${dome.maxHp} · G 可查看`
+      : cooldown > 0
+        ? `罩体已破 · ${Math.ceil(cooldown)} 秒后可按 G 重建`
+        : "罩体可用 · 按 G 部署";
+    domeStatus.dataset.ready = String(!dome?.active && cooldown <= 0);
+  }
   $("bomb-tools").hidden =
     !expedition || state.state !== "playing" || self?.faction === "zombie";
   if (expedition) {
@@ -925,7 +952,7 @@ function updateUI() {
 function updateBioSettings() {
   const level = BIO_LEVELS[$("bio-level").value];
   document.querySelector("#bio-settings p").textContent =
-    `${level.name} · 开局三轮强化，20 秒准备后产生母体。随身携带 1 支解毒剂，援助物资每 30 秒刷新；潜伏结束转为丧尸继续对抗。`;
+    `${level.name} · 开局三轮强化，20 秒找点后产生母体。每名人类拥有安全泡泡罩，援助物资每 30 秒刷新；潜伏结束转为丧尸继续对抗。`;
 }
 $("bio-level").onchange = updateBioSettings;
 updateBioSettings();
@@ -1219,6 +1246,10 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     send({ type: "bio-antidote" });
   }
+  if (e.code === "KeyG" && !e.repeat && state.mode === "bio") {
+    e.preventDefault();
+    send({ type: "bio-dome" });
+  }
   if (e.code === "KeyF" && !e.repeat) { e.preventDefault();send({type:"character-skill"}); }
   if (e.code === "KeyQ" && !e.repeat) {
     e.preventDefault();
@@ -1440,7 +1471,7 @@ function mapPreview() {
         ? (localMode ? "独自挑战海盗水手。用陷阱限制移动，连续糖泡命中破泡增伤。" : "1–5 人合作挑战水手。用陷阱限制移动，连续糖泡命中破泡增伤，及时救援队友。")
         : ruleset === "boss"
           ? "180 秒内击败首领。使用陷阱创造攻击时机，先困泡再连续命中造成双倍伤害。"
-          : "开局三轮强化与 20 秒布防。母体从场内 AI 中产生；使用解毒剂抵御感染，转化后以丧尸身份继续进化。"
+          : "开局三轮强化与 20 秒找点。每名人类拥有可被击破的安全泡泡罩；护罩破裂后按 G 冷却重建，使用解毒剂抵御感染。"
     : "1 对 1 抢包，完成对局获得养成资源。";
   document.querySelector("#mode-online p").textContent = expedition
     ? "支持 1–5 人合作。阵亡后观战，全员阵亡则挑战失败。"
@@ -1684,6 +1715,21 @@ function render(now) {
         OY + y * T,
       );
   paintTactics(ctx,map,OX,OY);
+  if (state.mode === "bio") {
+    for (const p of state.players || []) {
+      const d = p.dome;
+      if (!d?.active) continue;
+      const x = OX + d.x * T, y = OY + d.y * T, r = d.radius * T;
+      const g = ctx.createRadialGradient(x, y, r * .15, x, y, r);
+      g.addColorStop(0, "#9beeff18"); g.addColorStop(.78, "#3dc8e92a"); g.addColorStop(1, "#84e8ff78");
+      ctx.fillStyle = g; ctx.strokeStyle = p.id === myId ? "#fff0a0" : "#83dff0"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = "#ffdf6b"; ctx.lineWidth = 4; ctx.beginPath();
+      ctx.arc(x, y, r + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, d.hp / d.maxHp)); ctx.stroke();
+      ctx.fillStyle = "#08324dcc"; ctx.fillRect(x - 30, y - r - 18, 60, 7);
+      ctx.fillStyle = "#7ff0c4"; ctx.fillRect(x - 29, y - r - 17, 58 * Math.max(0, d.hp / d.maxHp), 5);
+    }
+  }
   if (map.mode !== "water11")
     for (let y = minY; y < maxY; y++)
       for (let x = minX; x < maxX; x++) {
@@ -1715,7 +1761,7 @@ function render(now) {
     }
   }
 
-  if (state.bio) paintDefense(ctx, state.bio.zone, OX, OY);
+  // 生化模式使用每名玩家独立的安全泡泡；不再绘制固定防守区。
   for (const item of state.items || []) {
     if (item.availableAt > state.time) continue;
     if (item.kind === "aid") {
@@ -2433,21 +2479,31 @@ function render(now) {
           11,
           "#e6faff",
         );
+        ctx.fillStyle = "#173b50";
+        ctx.fillRect(661, 426, 121, 8);
+        ctx.fillStyle = "#6ce4b2";
+        ctx.fillRect(661, 426, 121 * Math.max(0, Math.min(1, run.xp / Math.max(1, run.nextXp))), 8);
         text(
           `经验 ${Math.floor(run.xp)}/${run.nextXp}`,
           721,
-          438,
-          11,
+          449,
+          10,
           "#a3ffe2",
         );
         text(
           `第 ${state.wave} 波 · 敌人 ${state.enemies.length}`,
           721,
-          461,
+          469,
           10,
           "#ffe17a",
         );
-        text("移动拾取经验晶体", 721, 479, 9, "#bde9fa");
+        text(
+          `已获：${(run.acquired || []).slice(-2).join(" · ") || "暂无强化"}`,
+          721,
+          489,
+          8,
+          "#bde9fa",
+        );
       }
     } else if (state.mode === "boss") {
       const boss = state.enemies?.find((e) => e.kind === "boss");

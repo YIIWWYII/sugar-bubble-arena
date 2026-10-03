@@ -114,6 +114,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     inRoom = false,
     entryDesign = false,
     savingAppearance = false,
+    outfitSaved = false,
     draft = { ...DEFAULT_APPEARANCE };
   let draftCharacter = "sea";
   const portrait = (recipe) =>
@@ -123,6 +124,12 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     for (const select of document.querySelectorAll("[data-appearance]"))
       select.value = draft[select.dataset.appearance];
     previewAppearance();
+    syncAppearanceSummary();
+  }
+  function syncAppearanceSummary() {
+    const hero = characterOf(draftCharacter);
+    $("appearance-selected-character").textContent = hero?.name || "未选择";
+    $("appearance-selected-look").textContent = outfitSaved ? "已设置" : "未保存";
   }
   function previewAppearance() {
     const key = `prince-red-stand-${previewDirection}`;
@@ -144,7 +151,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     $('character-templates').replaceChildren();
     for(const [id,hero] of Object.entries(CHARACTERS)){
       const button=document.createElement('button');button.type='button';button.className='character-template';button.setAttribute('aria-pressed',String(id===draftCharacter));
-      button.innerHTML=`<img src="${portrait({...DEFAULT_APPEARANCE,...hero.look})}" alt=""><div><strong>${hero.name}</strong><small>${hero.role}</small><p>速度 ${5+hero.speed} · 泡数 ${2+hero.capacity} · 威力 ${1+hero.power} · 生命 ${5+hero.hp}</p><p>${hero.trait}</p><p>F ${hero.skill} · ${hero.cooldown} 秒冷却<br>${hero.description}</p><span>${hero.bubble}</span></div>`;
+      button.innerHTML=`<img src="${portrait({...DEFAULT_APPEARANCE,...hero.look})}" alt=""><div><strong>${hero.name}</strong><small>${hero.role}</small><p>速度 ${5+hero.speed} · 泡数 ${2+hero.capacity} · 威力 ${1+hero.power} · 生命 ${5+hero.hp}</p><p>${hero.trait}</p><p>F ${hero.skill} · ${hero.cooldown} 秒冷却<br>${hero.description}</p><span>${hero.bubble}</span></div><b class="character-selected">${id===draftCharacter ? "已选定职业" : "选择职业"}</b>`;
       button.onclick=()=>{draftCharacter=id;draft={...draft,...hero.look};renderTemplates();syncDraft();};$('character-templates').append(button);
     }
   }
@@ -165,6 +172,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
         ...DEFAULT_APPEARANCE,
         ...APPEARANCE_PRESETS[button.dataset.preset].value,
       };
+      outfitSaved = false;
       syncDraft();
     };
   for (const button of document.querySelectorAll("[data-preview-dir]"))
@@ -181,10 +189,11 @@ export function careerUI(manifest, send, images, mapThumbnail) {
         Math.floor(Math.random() * option.values.length),
       ]),
     );
+    outfitSaved = false;
     syncDraft();
   };
   function editAppearance() {
-    draftCharacter=profile?.character || "sea";renderTemplates();
+    draftCharacter=profile?.character || "sea"; outfitSaved = Boolean(profile?.appearanceConfigured); renderTemplates();
     draft = entryDesign && !profile?.accountName
       ? { ...DEFAULT_APPEARANCE }
       : { ...DEFAULT_APPEARANCE, ...profile?.appearance };
@@ -195,6 +204,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
       select.value = draft[select.dataset.appearance];
     $("appearance-status").textContent = "";
     previewAppearance();
+    syncAppearanceSummary();
     openLobbyPage("appearance-dialog");
   }
 
@@ -205,7 +215,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     }
   });
   $("appearance-fields").innerHTML = [
-    ["基础造型", ["hair", "skin", "outfit", "style", "eyes", "mouth"]],
+    ["基础造型", ["gender", "hair", "skin", "outfit", "style", "eyes", "mouth"]],
     ["服饰与装备", ["accessory", "back", "held", "shoes"]],
     ["翅膀与坐骑", ["wings", "mount", "aura"]],
   ]
@@ -222,7 +232,9 @@ export function careerUI(manifest, send, images, mapThumbnail) {
   for (const select of document.querySelectorAll("[data-appearance]"))
     select.onchange = () => {
       draft[select.dataset.appearance] = Number(select.value);
+      outfitSaved = false;
       previewAppearance();
+      syncAppearanceSummary();
     };
   $("npc-gallery").innerHTML = Object.values(NPC_DESIGNS)
     .map(
@@ -233,11 +245,13 @@ export function careerUI(manifest, send, images, mapThumbnail) {
   $("appearance-open").onclick = () => {
     entryDesign = false;
     $("close-appearance").textContent = "返回";
-    $("appearance-save").textContent = "保存外观";
     editAppearance();
   };
   $("close-appearance").onclick = () => {
-    if (entryDesign) saveAppearance(draft);
+    if (entryDesign) {
+      $("appearance-status").textContent = "请点击“保存角色设置”完成首次配置。";
+      return;
+    }
     else closeLobbyPage();
   };
   function saveAppearance(value) {
@@ -246,13 +260,30 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     ) {
       savingAppearance = true;
       busy = true;
-      $("appearance-save").disabled = true;
-      $("appearance-skip").disabled = true;
-      $("appearance-status").textContent = "正在保存外观…";
+      $("appearance-role-save").disabled = true;
+      $("appearance-status").textContent = "正在保存角色配置…";
     }
   }
-  $("appearance-save").onclick = () => saveAppearance(draft);
-  $("appearance-skip").onclick = () => { draftCharacter="sea";saveAppearance({ ...DEFAULT_APPEARANCE }); };
+  function saveRoleSettings() {
+    if (!outfitSaved) {
+      $("appearance-status").textContent = "请先在装扮搭配中点击“保存外观”。";
+      $("outfit-tab").click();
+      return;
+    }
+    saveAppearance(draft);
+  }
+  $("appearance-role-save").onclick = saveRoleSettings;
+  $("appearance-save").onclick = () => {
+    outfitSaved = true;
+    $("appearance-status").textContent = "外观已设置";
+    syncAppearanceSummary();
+  };
+  $("appearance-skip").onclick = () => {
+    draft = { ...DEFAULT_APPEARANCE };
+    outfitSaved = true;
+    syncDraft();
+    $("appearance-status").textContent = "已使用默认外观";
+  };
   const icon = (key) => {
     const m = manifest[key],
       scale = Math.min(1, 40 / m.w, 46 / m.h);
@@ -298,6 +329,7 @@ export function careerUI(manifest, send, images, mapThumbnail) {
       .querySelector(".hero-character")
       .classList.toggle("decorated", hasLargeDecor(profile.appearance));
     document.querySelector(".career-hero>img").src = avatar;
+    $("appearance-role-save").disabled = busy || inRoom;
     $("appearance-save").disabled = busy || inRoom;
     $("appearance-skip").disabled = busy || inRoom;
     $("collection-summary").textContent =
@@ -433,8 +465,8 @@ export function careerUI(manifest, send, images, mapThumbnail) {
       } else if (firstProfile && !profile.appearanceConfigured) {
         firstDesignRequired = true;
         entryDesign = true;
-        $("close-appearance").textContent = "确认并进入";
-        $("appearance-save").textContent = "保存并进入大厅";
+        $("close-appearance").textContent = "返回";
+        $("appearance-role-save").textContent = "保存角色设置并进入大厅";
         editAppearance();
       }
     },
@@ -461,9 +493,26 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     combat(state, id) {
       const p = state.players.find((p) => p.id === id),
         skill = p && SKILLS[p.skill];
-      $("combat-tools").hidden = !inRoom || state.state !== "playing";
+      $("combat-tools").hidden = state.state !== "playing";
       if (!p) return;
       const hero=characterOf(p.character),characterCooldown=Math.max(0,Math.ceil((p.characterReadyAt || 0)-state.time));
+      const run=p.run || p.bioBuild;
+      const hp=state.mode==='survivor' ? (run?.hp ?? p.hp ?? 0) : (p.hp ?? p.maxHp ?? 0);
+      const maxHp=state.mode==='survivor' ? (run?.maxHp ?? p.maxHp ?? 1) : (p.maxHp ?? 0);
+      const faction=p.faction==='zombie'?'丧尸':state.mode==='classic'?'无生命值':'人类';
+      $("hud-role-mark").textContent=hero.name.slice(0,1);
+      $("hud-role-mark").style.background=hero.color;
+      $("hud-character-name").textContent=hero.name;
+      $("hud-character-role").textContent=hero.role;
+      $("hud-character-trait").textContent=`${hero.bubble} · ${hero.trait.split('；')[0]}`;
+      $("hud-faction").textContent=faction;
+      $("hud-hp-label").textContent=maxHp ? `生命 ${Math.max(0,hp)}/${maxHp}` : '经典 · 无生命值';
+      $("hud-hp-fill").style.width=maxHp ? `${Math.max(0,Math.min(100,hp/maxHp*100))}%` : '0%';
+      $("hud-hp-fill").style.background=p.faction==='zombie'?'linear-gradient(90deg,#e9536f,#ff9a8f)':maxHp&&hp/maxHp<.35?'linear-gradient(90deg,#f05c65,#ffc261)':'linear-gradient(90deg,#45d890,#b9ef74)';
+      $("hud-speed").textContent=`速度 ${(p.speed ?? 5).toFixed(1)}`;
+      $("hud-capacity").textContent=`泡泡 ${p.capacity ?? 0}`;
+      $("hud-power").textContent=`威力 ${p.power ?? 0}`;
+      $("hud-objective-text").textContent=state.objective || '完成当前目标';
       $('character-skill-use').hidden=p.faction==='zombie';
       $('character-skill-use').textContent=`F ${hero.skill} ${characterCooldown ? characterCooldown+'s' : '可用'}`;
       $('character-skill-use').disabled=characterCooldown>0 || p.status!=='alive';
@@ -499,6 +548,11 @@ export function careerUI(manifest, send, images, mapThumbnail) {
           ? `获得 ${p.lastAid.name}`
           : buffs.join(" · ") ||
             (state.mode === "bio" ? "" : "拾取道具后显示临时增益");
+      const record = $("hud-run-record"), recordText = $("hud-run-record-text");
+      const acquired = state.mode === "survivor" ? (run?.acquired || []) : [];
+      record.hidden = !acquired.length;
+      recordText.textContent = acquired.slice(-4).join(" · ");
+      $("hud-buff").dataset.empty=String(!$('buff-status').textContent && !acquired.length);
     },
   };
 }

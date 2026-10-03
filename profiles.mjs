@@ -28,6 +28,7 @@ export class ProfileStore {
       db.exec(`CREATE TABLE IF NOT EXISTS profiles (id TEXT PRIMARY KEY, value TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS accounts (name TEXT PRIMARY KEY, profile_id TEXT NOT NULL UNIQUE REFERENCES profiles(id), salt TEXT NOT NULL, password_hash TEXT NOT NULL, recovery_hash TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, profile_id TEXT NOT NULL REFERENCES profiles(id), expires INTEGER NOT NULL);
+        CREATE TABLE IF NOT EXISTS visit_events (id INTEGER PRIMARY KEY AUTOINCREMENT, campaign TEXT NOT NULL, ip_hash TEXT NOT NULL, ip_masked TEXT NOT NULL, user_agent TEXT NOT NULL, referer TEXT NOT NULL, created_at INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);`);
       if (!db.prepare("SELECT 1 FROM metadata WHERE key='legacy-import'").get()) {
         const old = path.join(path.dirname(filename), "profiles.json");
@@ -65,6 +66,16 @@ export class ProfileStore {
     return id ? this.db(db => db.prepare("SELECT id FROM profiles WHERE id=? AND NOT EXISTS(SELECT 1 FROM accounts WHERE profile_id=?)").get(id,id)?.id || null) : null;
   }
   create() { const id=randomBytes(24).toString("hex"); this.commit(id,freshProfile()); return id; }
+  recordQrVisit({ campaign = "default", ip = "", userAgent = "", referer = "" } = {}) {
+    const cleanCampaign = String(campaign).replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 64) || "default";
+    const cleanIp = String(ip).replace(/[^a-fA-F0-9:.%]/g, "").slice(0, 96) || "unknown";
+    const masked = cleanIp.includes(":")
+      ? cleanIp.split(":").slice(0, 4).join(":") + "::"
+      : cleanIp.split(".").slice(0, 3).join(".") + ".0";
+    const hash = digest(`${process.env.ANALYTICS_SALT || "sugar-bubble-analytics"}:${cleanIp}`);
+    this.db(db => db.prepare("INSERT INTO visit_events (campaign,ip_hash,ip_masked,user_agent,referer,created_at) VALUES (?,?,?,?,?,?)")
+      .run(cleanCampaign, hash, masked, String(userAgent).slice(0, 300), String(referer).slice(0, 300), Date.now()));
+  }
   view(id) {
     if (!id) return null;
     return this.db(db => {

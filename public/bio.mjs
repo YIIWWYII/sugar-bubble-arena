@@ -203,7 +203,49 @@ export class BioMatch extends ExpeditionMatch {
       infectedBy: null,
       speed: p.speed || 4.2,
       nextContact: 0,
+      dome: null,
+      domeCooldownAt: 0,
     });
+  }
+  inDome(p, point = p) {
+    const d = p?.dome;
+    if (!d?.active) return false;
+    const dx = point.x - d.x, dy = point.y - d.y;
+    return dx * dx + dy * dy <= d.radius * d.radius;
+  }
+  domeFor(point) {
+    return this.players.find((p) => p.faction === "human" && this.inDome(p, point));
+  }
+  placeDome(id) {
+    const p = this.players.find((actor) => actor.id === id);
+    if (this.state !== "playing" || !p || p.faction !== "human" || p.status !== "alive" || p.dome?.active || (p.domeCooldownAt || 0) > this.time) return false;
+    p.dome = { x: p.x, y: p.y, radius: 2.5, hp: 18, maxHp: 18, active: true };
+    this.event("dome-place", { player: p.id, x: p.x, y: p.y });
+    return true;
+  }
+  damageDome(owner, amount = 1) {
+    const d = owner?.dome;
+    if (!d?.active) return false;
+    d.hp = Math.max(0, d.hp - amount);
+    if (!d.hp) {
+      d.active = false;
+      owner.domeCooldownAt = this.time + 18;
+      this.event("dome-break", { player: owner.id, x: d.x, y: d.y });
+    }
+    return true;
+  }
+  canStand(p, x, y) {
+    if (p.faction === "zombie" && this.domeFor({ x, y })) return false;
+    return super.canStand(p, x, y);
+  }
+  pressureDome(zombie) {
+    if (zombie.faction !== "zombie" || zombie.status !== "alive") return;
+    const owner = this.players.find((p) => p.faction === "human" && p.dome?.active && dist(p.dome, zombie) <= p.dome.radius + 0.72 && dist(p.dome, zombie) > p.dome.radius);
+    if (!owner || this.time < (zombie.domeHitAt || 0)) return;
+    zombie.domeHitAt = this.time + 1.1;
+    this.damageDome(owner, zombie.mother ? 2 : 1);
+    zombie.stunUntil = Math.max(zombie.stunUntil || 0, this.time + 0.35);
+    this.push(zombie, { x: owner.dome.x - 0.5, y: owner.dome.y - 0.5 }, 1);
   }
   newBuild(pending) {
     return {
@@ -417,6 +459,7 @@ export class BioMatch extends ExpeditionMatch {
       this.phase !== "outbreak" ||
       p.faction !== "human" ||
       p.status === "dead" ||
+      this.inDome(p) ||
       p.infectedUntil > 0 ||
       p.shieldUntil >= this.time
     )
@@ -597,6 +640,7 @@ export class BioMatch extends ExpeditionMatch {
         (a) =>
           a.faction === "human" &&
           a.status !== "dead" &&
+          !this.inDome(a) &&
           dist(p, a) < 1.05 &&
           this.clearContact(p, a),
       )
@@ -700,7 +744,7 @@ export class BioMatch extends ExpeditionMatch {
         a,
         this.time,
         2 + (owner?.bioBuild.ranks.pressure || 0),
-        3 * resist,
+        4.2 * resist,
       );
       a.hurtUntil = this.time + 0.3;
       if (this.players.includes(a) && a.hp > 0) {
@@ -764,6 +808,7 @@ export class BioMatch extends ExpeditionMatch {
       if (nearest) {
         e.moveSpeed = e.speed * (e.hasteUntil > this.time ? 1.35 : 1);
         this.moveEnemy(e, nearest, dt);
+        this.pressureDome(e);
         this.claw(e);
       }
       return;
@@ -851,6 +896,9 @@ export class BioMatch extends ExpeditionMatch {
       const mother = candidates[Math.floor(this.random() * candidates.length)];
       this.motherId = mother.id;
       this.transform(mother, true);
+      for (const p of this.players)
+        if (p.faction === "human" && p.status === "alive")
+          this.placeDome(p.id);
     }
     if (this.elapsed >= this.nextSupply) {
       this.refreshSupply();
@@ -873,6 +921,7 @@ export class BioMatch extends ExpeditionMatch {
     for (const p of this.players)
       if (p.faction === "zombie" && p.status === "alive") {
         this.enemyItems(p);
+        this.pressureDome(p);
         this.claw(p);
       }
     if (
@@ -910,11 +959,12 @@ export class BioMatch extends ExpeditionMatch {
         motherId: this.motherId,
         paused: this.paused(),
         zone: this.map.defenseZone,
+        dome: this.players.filter((p) => p.faction === "human").map((p) => ({ player: p.id, ...p.dome, cooldown: Math.max(0, (p.domeCooldownAt || 0) - this.time) })),
       },
       objective:
         this.phase === "preparation"
-          ? "寻找防御地形，布置陷阱；20 秒后从场内 AI 中产生母体"
-          : "人类使用解毒剂抵御感染；丧尸追踪并感染所有人类",
+          ? "寻找点位，20 秒后为每名人类生成安全泡泡罩"
+          : "人类：守住个人安全泡泡，利用震退/冰冻泡泡和陷阱消耗丧尸；护罩被击破后等待冷却并换点重建",
     };
   }
 }

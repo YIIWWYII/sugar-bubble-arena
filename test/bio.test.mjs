@@ -30,6 +30,20 @@ function advance(m, seconds) {
     m.tick(1 / 30);
   }
 }
+test("each human receives an invulnerable safety bubble that can be broken and rebuilt after cooldown", () => {
+  const m = setup();
+  pick(m);
+  advance(m, 20.2);
+  const p = m.players[0];
+  assert.equal(m.phase, "outbreak");
+  assert(p.dome?.active);
+  assert(m.inDome(p, p));
+  assert(!m.infect(p, m.enemies[0]));
+  assert.equal(m.placeDome(p.id), false);
+  m.damageDome(p, p.dome.maxHp);
+  assert.equal(p.dome.active, false);
+  assert(p.domeCooldownAt > m.time);
+});
 test("three initial choices per player pause clocks, validate tokens and keep human-only options", () => {
   const m = setup(2),
     p = m.players[0],

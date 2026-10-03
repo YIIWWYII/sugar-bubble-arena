@@ -67,7 +67,7 @@ test('practice earns no resources and invalid imports preserve the old save',() 
 });
 
 
-test('server release gate blocks rooms and town while allowing AI',async () => {
+test('server release gate blocks multiplayer rooms while allowing single-player town and AI',async () => {
   const {spawn} = await import('node:child_process');
   const {mkdtemp,rm} = await import('node:fs/promises');
   const {tmpdir} = await import('node:os');
@@ -80,14 +80,19 @@ test('server release gate blocks rooms and town while allowing AI',async () => {
     await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',code=>reject(Error(`server exit ${code}`)));});
     const info=await fetch(`http://localhost:${port}/api/info`).then(r=>r.json());
     assert.equal(info.multiplayerEnabled,false);
-    ws=new WebSocket(`ws://localhost:${port}`);
+    const profileResponse=await fetch(`http://localhost:${port}/api/profile`);
+    const profileCookie=profileResponse.headers.get('set-cookie');
+    ws=new WebSocket(`ws://localhost:${port}`,{headers:{cookie:profileCookie}});
     await new Promise((resolve,reject)=>{ws.once('open',resolve);ws.once('error',reject);});
     const request=(msg,type)=>new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{ws.off('message',receive);reject(Error('protocol timeout'));},3000);
       const receive=raw=>{const packet=JSON.parse(raw);if(packet.type===type){clearTimeout(timer);ws.off('message',receive);resolve(packet);}};
       ws.on('message',receive);ws.send(JSON.stringify(msg));
     });
-    for(const msg of [{type:'create'},{type:'join',code:'123456'},{type:'town-enter'},{type:'chat',text:'test'}]) assert.equal((await request(msg,'error')).message,'暂未开放，敬请等待');
+    for(const msg of [{type:'create'},{type:'join',code:'123456'}]) assert.equal((await request(msg,'error')).message,'暂未开放，敬请等待');
+    assert.equal((await request({type:'town-enter',name:'糖友'},'town-history')).type,'town-history');
+    assert.equal((await request({type:'chat',scope:'town',text:'test'},'chat')).scope,'town');
+    ws.send(JSON.stringify({type:'town-leave'}));
     assert.equal((await request({type:'create',mode:'classic',mapId:'bun06_8',aiLevel:'easy'},'joined')).type,'joined');
     const lobby=await fetch(`http://localhost:${port}/api/rooms`).then(r=>r.json());
     assert.deepEqual(lobby.rooms,[]);assert.equal(lobby.online,0);
