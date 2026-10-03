@@ -1,22 +1,65 @@
-MIT License
+Sugar Bubble Arena — Project License
+====================================
 
-Copyright (c) 2026 Ker0el
-Copyright (c) 2026 WY (modifications and original additions)
+Copyright (c) 2026 WY. All rights reserved for original additions.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This project is a combined work. Code and material that originated in
+Ker0el/qqt-bun6 remain available under the MIT License included in the
+upstream project. The original additions in this repository, including new
+source code, interface design, documentation, game rules, artwork, SVG
+assets, audio, video, branding, and other original expressive material by WY,
+are licensed under the terms below.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Non-commercial permission
+----------------------------
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+You may view, study, and run the project for personal, educational, archival,
+and non-commercial community purposes. You may make private modifications for
+those purposes.
+
+2. Restrictions
+---------------
+
+Without prior written permission from WY, you may not:
+
+* sell, rent, license, monetize, advertise, or otherwise use the original WY
+  additions for a commercial purpose;
+* publish, mirror, redistribute, or deploy a substantially similar service
+  based on the original additions;
+* remove or alter copyright, attribution, provenance, trademark, or license
+  notices;
+* present the project, its original additions, or derivative releases as your
+  own work or as an official WY release; or
+* use the name, logos, distinctive visual identity, characters, original
+  artwork, promotional material, or substantial expressive presentation of
+  this project to imply endorsement or affiliation.
+
+Ideas and game rules as abstract concepts are not claimed as exclusive
+property by this notice. Copyright and other rights apply to the concrete
+source code, artwork, text, audiovisual material, and distinctive expression
+created for this project.
+
+3. Attribution and redistribution
+----------------------------------
+
+Any permitted copy or non-commercial derivative must retain this file,
+NOTICE.md, upstream notices, and clear attribution to WY and the upstream
+authors. A derivative must identify its changes and link to the official
+repository: https://github.com/YIIWWYII/sugar-bubble-arena
+
+4. Third-party material
+-----------------------
+
+This license does not grant rights to third-party material, including legacy
+QQ堂-derived assets, fonts, code, music, or other resources. See NOTICE.md and
+the relevant asset license files before using any asset outside this project.
+
+5. No warranty
+-------------
+
+The project is provided “AS IS”, without warranty of any kind. To the maximum
+extent permitted by law, WY and the upstream authors are not liable for any
+claim, damages, or other liability arising from use of the project.
+
+If you need commercial, redistribution, or asset rights beyond these terms,
+contact the project owner for a separate written license.

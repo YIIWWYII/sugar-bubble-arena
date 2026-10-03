@@ -1,9 +1,15 @@
 {
   "name": "sugar-bubble-arena",
   "version": "0.6.0",
-  "private": true,
-  "author": { "name": "WY", "url": "https://github.com/YIIWWYII" },
-  "repository": { "type": "git", "url": "https://github.com/YIIWWYII/sugar-bubble-arena.git" },
+  "private": false,
+  "author": {
+    "name": "WY",
+    "url": "https://github.com/YIIWWYII"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YIIWWYII/sugar-bubble-arena.git"
+  },
   "homepage": "https://yiiwwyii.github.io/sugar-bubble-arena/",
   "type": "module",
   "description": "糖泡对战 —— 多模式联机游戏",
@@ -20,5 +26,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0"
-  }
+  },
+  "license": "LicenseRef-Sugar-Bubble-NonCommercial-1.0"
 }
