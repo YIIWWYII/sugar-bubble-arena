@@ -1,5 +1,5 @@
 // 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
-import { characterOf } from './characters.mjs';
+import { characterOf, professionRanks } from './characters.mjs';
 // Authoritative, deterministic gameplay. Distances are map cells, times seconds.
 import { SKILLS, TEMP_ITEMS } from "./progression.mjs";
 // Timing constants are research-derived calibration values, not recovered original code.
@@ -199,6 +199,7 @@ export class Match {
     if (!p || !profile) return;
     p.appearance = profile.appearance;
     p.character = profile.character || "sea";
+    p.professionRanks = professionRanks(profile);
     p.build = {
       speed: profile.attributes.speed,
       capacity: profile.attributes.capacity,
@@ -220,10 +221,17 @@ export class Match {
     const p=this.players.find(p=>p.id===id);
     if(this.state!=='playing' || !p || p.status!=='alive' || p.faction==='zombie' || this.paused?.() || (p.characterReadyAt || 0)>this.time)return false;
     const hero=characterOf(p.character);
-    if(p.character==='star'){p.surgeUntil=Math.max(p.surgeUntil || 0,this.time+6);p.magnetUntil=Math.max(p.magnetUntil || 0,this.time+6);}
-    else if(p.character==='wind'){p.hasteUntil=Math.max(p.hasteUntil || 0,this.time+4);p.shieldUntil=Math.max(p.shieldUntil || 0,this.time+0.6);}
-    else{p.shieldUntil=Math.max(p.shieldUntil || 0,this.time+(p.character==='stone'?3:2));p.slowUntil=0;p.slideDir=null;}
-    p.characterReadyAt=this.time+hero.cooldown;this.event('skill',{player:id,key:'character',x:p.x,y:p.y});return true;
+    const [durationRank, cooldownRank, specialRank] = p.professionRanks || [0,0,0];
+    if(p.character==='star'){p.surgeUntil=Math.max(p.surgeUntil || 0,this.time+6+durationRank);p.magnetUntil=Math.max(p.magnetUntil || 0,this.time+6+durationRank);}
+    else if(p.character==='wind'){p.hasteUntil=Math.max(p.hasteUntil || 0,this.time+4+durationRank);p.shieldUntil=Math.max(p.shieldUntil || 0,this.time+0.6+specialRank*.3);}
+    else{p.shieldUntil=Math.max(p.shieldUntil || 0,this.time+(p.character==='stone'?3+durationRank*.75:2+durationRank*.5));p.slowUntil=0;p.slideDir=null;}
+    if(specialRank){
+      if(p.character==='sea'){p.frozenUntil=0;p.stunUntil=0;p.magnetUntil=Math.max(p.magnetUntil || 0,this.time+specialRank);}
+      if(p.character==='wind'){p.slowUntil=0;p.slideDir=null;}
+      if(p.character==='stone')p.surgeUntil=Math.max(p.surgeUntil || 0,this.time+specialRank*2);
+      if(p.character==='star'){p.hasteUntil=Math.max(p.hasteUntil || 0,this.time+specialRank);p.shieldUntil=Math.max(p.shieldUntil || 0,this.time+specialRank*.3);}
+    }
+    p.characterReadyAt=this.time+hero.cooldown-cooldownRank*2;this.event('skill',{player:id,key:'character',x:p.x,y:p.y});return true;
   }
   useSkill(id) {
     const p = this.players.find((p) => p.id === id),

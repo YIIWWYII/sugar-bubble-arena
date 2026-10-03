@@ -293,6 +293,28 @@ export function appearanceSheet(image, key, recipe = DEFAULT_APPEARANCE) {
   c.putImageData(data, 0, 0);
   const front = key.endsWith("-3") || key.endsWith("trigger"),
     back = key.endsWith("-1");
+  const heads = artwork.get('gender-heads');
+  if (heads && a.gender !== 2 && /(?:stand|walk|trigger)/.test(key)) {
+    const direction = Number(key.match(/-(\d)$/)?.[1] ?? 3);
+    const head = document.createElement('canvas'); head.width=100;head.height=100;
+    const hc=head.getContext('2d');hc.imageSmoothingEnabled=false;
+    hc.drawImage(heads,direction*100,a.gender*100,100,100,0,0,100,100);
+    const pixels=hc.getImageData(0,0,100,100);
+    for(let i=0;i<pixels.data.length;i+=4){
+      const [r,g,b,alpha]=pixels.data.slice(i,i+4);if(!alpha)continue;
+      let target,shade;
+      if(r>g*1.7 && r>b*1.7){target=hair;shade=0.62+0.5*r/255;}
+      else if(r>105 && r>g*1.06 && g>b*1.06){target=skin;shade=0.82+0.18*r/255;}
+      if(target)for(let k=0;k<3;k++)pixels.data[i+k]=Math.min(255,Math.round(target[k]*shade));
+    }
+    hc.putImageData(pixels,0,0);c.imageSmoothingEnabled=false;
+    for(let f=0;f<canvas.width/100;f++){
+      // Head replacement stays inside the body cell. Equipment is applied afterwards.
+      const bob=key.includes('walk')?[0,-1,0,1,0,-1][f%6]:0;
+      c.clearRect(f*100,0,100,62);
+      c.drawImage(head,f*100,bob);
+    }
+  }
   for (let f = 0; f < canvas.width / 100; f++) {
     const x = f * 100;
     c.fillStyle = APPEARANCE_OPTIONS.hair.colors[a.hair];
@@ -335,18 +357,6 @@ export function appearanceSheet(image, key, recipe = DEFAULT_APPEARANCE) {
           c.fillRect(x + 53, 57, 1, 1);
         }
       }
-    }
-  }
-  // 女性形象使用额外的侧束发和发饰轮廓，与现有像素身体保持同一套比例。
-  if (a.gender === 1) {
-    c.fillStyle = APPEARANCE_OPTIONS.hair.colors[a.hair];
-    for (let f = 0; f < canvas.width / 100; f++) {
-      const x = f * 100;
-      c.fillRect(x + 24, 34, 6, 18);
-      c.fillRect(x + 70, 34, 6, 18);
-      c.fillStyle = "#ffe672";
-      c.fillRect(x + 24, 45, 6, 2);
-      c.fillStyle = APPEARANCE_OPTIONS.hair.colors[a.hair];
     }
   }
   const decorated = decorateSheet(canvas, key, a);

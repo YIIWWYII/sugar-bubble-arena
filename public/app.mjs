@@ -791,7 +791,9 @@ function updateUI() {
   const self = state.players.find((p) => p.id === myId);
   for (const [action, field, label] of [['use-fork','forks','1 叉子'],['place-banana','bananas','2 香蕉'],['place-smile','smiles','3 笑脸']]) {
     const button = document.querySelector(`[data-touch-action="${action}"]`);
-    button.textContent = `${label} ${self?.[field] || 0}`;
+    button.setAttribute("aria-label", `${label} ${self?.[field] || 0}`);
+    const count=button.querySelector(".touch-cooldown");
+    if(count)count.textContent=String(self?.[field] || 0);
     button.disabled = !self?.[field] || (action==='use-fork' ? self?.status!=='trapped' : self?.status!=='alive') || (state.mode==='bio' && self?.faction==='zombie');
     button.title = action==='use-fork' ? '被泡泡困住时使用叉子自救' : action==='place-banana' ? '在脚下放置香蕉陷阱' : '在脚下放置笑脸减速陷阱';
   }

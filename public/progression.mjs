@@ -1,5 +1,5 @@
 // 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
-import { validateCharacter } from './characters.mjs';
+import { validateCharacter, PROFESSION_TREES, professionRanks } from './characters.mjs';
 import { freshSocial } from './friendship.mjs';
 import { DEFAULT_APPEARANCE, validateAppearance } from "./appearance.mjs";
 // 客户端展示与服务端校验共用的养成规则。
@@ -135,10 +135,12 @@ export function freshProfile() {
     receipts: [],
     social: freshSocial(),
     character: "sea",
+    professions: {},
   };
 }
 export function publicProfile(profile) {
   const { receipts, ...data } = profile;
+  data.professions = profile.professions || {};
   data.character = profile.character || "sea";
   data.appearance = { ...DEFAULT_APPEARANCE, ...profile.appearance };
   data.collection = profile.collection || [];
@@ -200,6 +202,18 @@ export const COLLECTION_MILESTONES = [
   { count: 8, skill: "purify", coins: 150, gems: 5 },
 ];
 export function changeProfile(profile, action) {
+  if(action.type === 'profession-upgrade') {
+    const id=profile.character || 'sea', i=action.node;
+    if(!Number.isInteger(i)||!PROFESSION_TREES[id]?.[i]) throw Error('无效职业分支');
+    const ranks=professionRanks(profile,id), level=ranks[i];
+    if(level>=3) throw Error('已达到最高等级');
+    if(i>0 && ranks[i-1]<1) throw Error('请先解锁前置节点');
+    const cost=upgradeCost('skill',level);
+    if(profile.coins<cost.coins||profile.gems<cost.gems) throw Error('资源不足');
+    profile.coins-=cost.coins;profile.gems-=cost.gems;
+    ranks[i]++;profile.professions ??={};profile.professions[id]=ranks;
+    return;
+  }
   profile.collection ??= [];
   profile.claimed ??= [];
   profile.milestones ??= [];

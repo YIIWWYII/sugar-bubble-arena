@@ -6,28 +6,28 @@ export function touchControls({canPlay, move, bomb, action, chat}) {
   pad.innerHTML = '<div class="joystick-ring"><span class="joystick-thumb"></span></div><span class="joystick-label">移动</span>';
   pad.setAttribute('aria-label','移动摇杆');
   const thumb = pad.querySelector('.joystick-thumb');
-  let pointer = null, direction = null;
+  let pointer = null, direction = null, origin = null;
   const setDirection = next => {
     if (direction === next) return;
     direction = next; move(next);
   };
   const stop = () => {
-    pointer = null; setDirection(null); thumb.style.transform = 'translate(-50%, -50%)';
+    pointer = null; origin = null; setDirection(null); thumb.style.transform = 'translate(-50%, -50%)';
     pad.classList.remove('held');
   };
   const steer = e => {
     const r = pad.getBoundingClientRect(), radius = Math.min(r.width,r.height)*.3;
-    let x=e.clientX-r.left-r.width/2, y=e.clientY-r.top-r.height/2;
+    let x=e.clientX-(origin?.x ?? r.left+r.width/2), y=e.clientY-(origin?.y ?? r.top+r.height/2);
     const distance=Math.hypot(x,y), scale=Math.min(1,radius/(distance||1));
     x*=scale;y*=scale;
     thumb.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-    setDirection(joystickDirection(x/radius,y/radius));
+    setDirection(joystickDirection(x/radius,y/radius,direction));
   };
   pad.addEventListener('pointerdown', e => {
     if (!canPlay() || pointer !== null) return;
-    e.preventDefault(); pointer=e.pointerId; pad.setPointerCapture(pointer);pad.classList.add('held');steer(e);
+    e.preventDefault(); origin={x:e.clientX,y:e.clientY}; pointer=e.pointerId; pad.setPointerCapture(pointer);pad.classList.add('held');steer(e);
   });
-  pad.addEventListener('pointermove', e => { if(e.pointerId===pointer)steer(e); });
+  pad.addEventListener('pointermove', e => { if(e.pointerId===pointer){if(canPlay())steer(e);else stop();} });
   for(const event of ['pointerup','pointercancel','lostpointercapture']) pad.addEventListener(event,e=>{if(e.pointerId===pointer)stop();});
   window.addEventListener('blur', stop);
   window.addEventListener('resize', stop);
@@ -40,13 +40,33 @@ export function touchControls({canPlay, move, bomb, action, chat}) {
   for(const button of root.querySelectorAll('[data-touch-action]')) button.onclick = () => { if(canPlay()) action(button.dataset.touchAction); };
   const links = [['touch-character','character-skill-use'],['touch-skill','skill-use'],['touch-dome','bio-dome'],['touch-antidote','bio-antidote'],['touch-cycle','cycle-bomb'],['touch-detonate','detonate-bomb']];
   for(const [target,source] of links) document.getElementById(target).onclick = () => { if(canPlay()) document.getElementById(source).click(); };
+  const paths={
+    'touch-bomb':'<circle cx="24" cy="25" r="16"/><path d="M14 22q0-8 8-8M30 11l3-5m-4-1h8"/>',
+    'touch-character':'<path d="m24 5 6 12 13 2-10 10 2 14-11-7-12 7 3-14L5 19l13-2Z"/>',
+    'touch-skill':'<path d="m28 4-17 23h12l-3 17 18-26H26Z"/>',
+    'touch-dome':'<path d="M6 36a18 18 0 0 1 36 0ZM24 8v-4M7 15l-4-4m38 4 4-4"/><circle cx="24" cy="27" r="5"/>',
+    'touch-antidote':'<path d="M19 5h10v10l8 12v14H11V27l8-12ZM18 28h12m-6-6v12"/>',
+    'touch-cycle':'<path d="M9 19a16 16 0 0 1 29-6l3 6m0-12v12H29M39 29a16 16 0 0 1-29 6l-3-6m0 12V29h12"/>',
+    'touch-detonate':'<rect x="12" y="17" width="24" height="26" rx="5"/><path d="M24 17V5m-6 1h12"/><circle cx="24" cy="30" r="5"/>',
+    'touch-chat':'<path d="M5 7h38v27H22L10 43v-9H5ZM13 17h22m-22 8h16"/>',
+    'use-fork':'<path d="M16 4v14q0 8 8 8v18M24 4v22M32 4v14q0 8-8 8"/>',
+    'place-banana':'<path d="M34 5q7 30-23 31-6 0-7-5 27 3 26-22Z"/>',
+    'place-smile':'<circle cx="24" cy="24" r="18"/><path d="M15 28q9 12 18 0M17 15v6m14-6v6"/>'
+  };
+  for(const button of root.querySelectorAll('button')){
+    const label=button.textContent;button.setAttribute('aria-label',label);button.title=label;
+    button.innerHTML='<svg viewBox="0 0 48 48" aria-hidden="true">'+(paths[button.id] || paths[button.dataset.touchAction] || paths['touch-skill'])+'</svg><span class="touch-cooldown"></span>';
+  }
   const sync = () => {
     root.hidden = !media.matches || document.body.dataset.screen !== 'game' || !!document.body.dataset.lobbyPage;
     if (root.hidden || !canPlay()) stop();
     for(const [target,source] of links){
       const a=document.getElementById(target), b=document.getElementById(source);
       a.hidden = b.hidden || !!b.parentElement.closest('[hidden]'); a.disabled=b.disabled;
-      a.textContent=b.textContent.replace(/^[QERF]\s*/, '').replace(/ Lv\.\d+/, '').replace(/　/g, ' ');
+      const label=b.textContent.replace(/^[QERFG]\s*/, '').replace(/ Lv\.\d+/, '').replace(/　/g, ' ');
+      a.setAttribute('aria-label',label);a.title=label;
+      a.querySelector('.touch-cooldown').textContent=label.match(/(\d+)s/)?.[1] || '';
+
     }
   };
   new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['data-screen','data-lobby-page','data-picking']});
@@ -56,8 +76,11 @@ export function touchControls({canPlay, move, bomb, action, chat}) {
 }
 
 // Four-way engine movement with a circular dead zone; visual thumb remains analog.
-export function joystickDirection(x,y) {
-  if(Math.hypot(x,y)<.2)return null;
+export function joystickDirection(x,y,previous=null) {
+  if(Math.hypot(x,y)<.12)return null;
+  if(previous && Math.abs(Math.abs(x)-Math.abs(y))<.12){
+    if((previous==='left'&&x<0)||(previous==='right'&&x>0)||(previous==='up'&&y<0)||(previous==='down'&&y>0))return previous;
+  }
   return Math.abs(x)>Math.abs(y) ? (x>0?'right':'left') : (y>0?'down':'up');
 }
 

@@ -1,5 +1,5 @@
 // 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
-import { validateCharacter } from './characters.mjs';
+import { validateCharacter, validateProfessions } from './characters.mjs';
 import { validateSocial } from './friendship.mjs';
 import { freshProfile, publicProfile, ATTRIBUTES, SKILLS, COLLECTION, COLLECTION_MILESTONES } from './progression.mjs';
 import { validateAppearance } from './appearance.mjs';
@@ -17,6 +17,7 @@ export function validateSave(value) {
     next[key] = source[key];
   }
   if (next.wins > next.matches) throw Error('存档对局记录无效');
+  next.professions = validateProfessions(source.professions);
   next.character = validateCharacter(source.character);
   next.appearance = validateAppearance(source.appearance);
   if (typeof source.appearanceConfigured !== 'boolean') throw Error('存档角色设置无效');

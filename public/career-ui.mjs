@@ -1,5 +1,5 @@
 // 糖泡对战 | 二次开发与维护：WY | 官方项目：https://github.com/YIIWWYII/sugar-bubble-arena | 第三方权利见 NOTICE.md
-import { CHARACTERS, characterOf } from './characters.mjs';
+import { CHARACTERS, characterOf, PROFESSION_TREES, professionRanks } from './characters.mjs';
 import {
   APPEARANCE_OPTIONS,
   APPEARANCE_PRESETS,
@@ -265,11 +265,8 @@ export function careerUI(manifest, send, images, mapThumbnail) {
     }
   }
   function saveRoleSettings() {
-    if (!outfitSaved) {
-      $("appearance-status").textContent = "请先在装扮搭配中点击“保存外观”。";
-      $("outfit-tab").click();
-      return;
-    }
+    outfitSaved = true;
+    syncAppearanceSummary();
     saveAppearance(draft);
   }
   $("appearance-role-save").onclick = saveRoleSettings;
@@ -388,6 +385,12 @@ export function careerUI(manifest, send, images, mapThumbnail) {
         return `<article class="growth-card"><div class="growth-heading">${icon(value.icon)}<div><b>${value.name}</b><span>等级 ${level} / ${value.max}</span></div></div><p>${value.description}</p><button class="blue-button small" data-upgrade="${key}" data-kind="attribute" ${max || inRoom || busy || profile.coins < cost.coins || profile.gems < cost.gems ? "disabled" : ""}>${max ? "已满级" : `升级 · ${cost.coins} 糖币${cost.gems ? ` + ${cost.gems} 星` : ""}`}</button></article>`;
       })
       .join("");
+    const ranks=professionRanks(profile);
+    $('profession-cards').innerHTML=PROFESSION_TREES[profile.character || 'sea'].map((node,i)=>{
+      const level=ranks[i],cost=upgradeCost('skill',level),locked=i>0&&!ranks[i-1];
+      return `<article class="growth-card"><b>${i+1}. ${node.name} · Lv.${level}/3</b><p>${node.description}</p><small>${i ? '前置：'+PROFESSION_TREES[profile.character || 'sea'][i-1].name+' Lv.1' : '职业起始节点'}</small><button class="blue-button" data-profession="${i}" ${level>=3||locked||busy||inRoom||profile.coins<cost.coins||profile.gems<cost.gems?'disabled':''}>${level>=3?'已满级':locked?'前置未解锁':cost.coins+' 糖币 + '+cost.gems+' 星'}</button></article>`;
+    }).join('');
+    $('profession-title').textContent=hero.name+' · '+hero.skill+'技能树（F）';
     $("skill-cards").innerHTML = Object.entries(SKILLS)
       .map(([key, value]) => {
         const level = profile.skills[key],
@@ -414,9 +417,9 @@ export function careerUI(manifest, send, images, mapThumbnail) {
       $("career-skills").hidden = button.dataset.careerTab !== "skills";
     };
   $("career-dialog").addEventListener("click", (e) => {
-    const button = e.target.closest("[data-upgrade],[data-equip]");
+    const button = e.target.closest("[data-upgrade],[data-equip],[data-profession]");
     if (!button || button.disabled) return;
-    const action = button.dataset.equip
+    const action = button.hasAttribute("data-profession") ? {type:"profession-upgrade",node:Number(button.dataset.profession)} : button.dataset.equip
       ? { type: "equip", key: button.dataset.equip }
       : {
           type: "upgrade",

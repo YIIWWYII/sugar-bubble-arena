@@ -233,3 +233,113 @@ body[data-local=true] .town-layout>aside{max-height:calc(100dvh - 180px);overflo
 @media(pointer:coarse) and (orientation:landscape) and (max-height:540px){body[data-screen=home] .topbar .connection{display:none}.developer-badge{font-size:11px}.developer-badge span{font-size:10px}body[data-screen=game] #developer-credit{display:none}}
 
 body[data-entry=login]>#developer-credit{display:flex!important}
+
+/* Touch actions use distinct silhouettes; only cooldown numbers remain visible. */
+@media(pointer:coarse) and (hover:none){
+ body[data-screen=game] #touch-controls{position:fixed;inset:0;pointer-events:none;z-index:45;padding:0;align-items:flex-end}
+ body[data-screen=game] .touch-pad{position:absolute;left:max(22px,env(safe-area-inset-left));bottom:max(22px,env(safe-area-inset-bottom));width:124px;height:124px;pointer-events:auto;background:#123e5555;border:1px solid #c9f2ff66;box-shadow:none}
+ .joystick-ring{inset:0;border:0}.joystick-label{display:none}.joystick-thumb{width:48px;height:48px;border:1px solid #effbffb0;background:#b9e5f577;box-shadow:none}
+ body[data-screen=game] .touch-actions{position:absolute;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));width:220px;pointer-events:none;gap:8px}
+ .touch-primary{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+ #touch-controls .touch-actions button{position:relative;pointer-events:auto;touch-action:none;flex:none!important;width:46px!important;height:46px;min-width:46px;min-height:46px!important;max-width:none;padding:8px!important;border-radius:50%;border:1px solid #d6f4ff99;background:#0d38536b;color:#e1faff;box-shadow:none;text-shadow:none;opacity:.85}
+ #touch-controls .touch-actions button:disabled{opacity:.38}
+ #touch-controls .touch-actions #touch-bomb{width:72px!important;height:72px;min-height:72px!important;padding:12px!important;background:#8fd7eb55;order:10}
+ #touch-controls svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+ #touch-controls .touch-cooldown{position:absolute;inset:0;display:grid;place-items:center;font:bold 17px sans-serif;color:#fff;text-shadow:0 1px 3px #000}
+ #touch-controls .touch-cooldown:not(:empty){background:#092b46bb;border-radius:50%}
+ #touch-controls .touch-items{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+ #touch-controls .touch-note{display:none}
+}
+@media(pointer:coarse) and (orientation:landscape){
+ html,body{height:100%;max-height:100dvh;overflow:hidden;overscroll-behavior:none}
+ body[data-entry=login]>#developer-credit,#developer-credit{display:none!important}
+ #entry-screen{height:100dvh;min-height:0;overflow:auto;gap:6px;padding:10px 20px}
+ #entry-screen .entry-brand{font-size:22px}
+ #entry-screen .entry-card{width:min(620px,100%)}
+ #entry-screen .window-content{padding:10px 18px}
+ #entry-screen h1{font-size:20px;margin:0}
+ #entry-screen p{margin:4px 0;line-height:1.4}
+ #entry-screen .entry-local-notice{margin:6px 0;padding:6px 10px}
+ #entry-screen .entry-note{display:none}
+ body[data-screen=home] .app{min-width:0!important;width:calc(100% - 16px)!important;height:100dvh;margin:0 8px!important;display:flex;flex-direction:column;padding:0}
+ body[data-screen=home] .topbar{flex:none;height:44px;min-height:44px;padding:2px 0;flex-wrap:nowrap}
+ body[data-screen=home] .topbar .connection,body[data-screen=home] .developer-badge,body[data-screen=home] .game-toolbar,body[data-screen=home] .app>footer{display:none!important}
+ body[data-screen=home] .game-frame{flex:1;min-height:0;margin:0}
+ body[data-screen=home] .game-stage{height:100%!important;min-height:0!important;overflow:hidden}
+ body[data-screen=home] #home-panel{height:100%;min-height:0;grid-template-columns:64px minmax(150px,1fr) minmax(280px,42%);gap:8px;padding:4px 0;overflow:hidden}
+ #home-panel .hero-stage{min-height:0;padding:10px;overflow:auto}
+ #home-panel .launch-panel{min-height:0;overflow:auto;padding:10px}
+ #home-panel .hero-world{min-height:90px;flex:1}
+ #home-panel .hero-heading h1{font-size:24px}
+ #home-panel .lobby-nav{position:static;width:auto;max-height:100%;overflow:auto;gap:4px}
+ body[data-screen=home][data-lobby-page] .lobby-page:not([hidden]),body[data-screen=home][data-lobby-page] #account-dialog:not([hidden]){
+  position:fixed!important;top:48px!important;left:82px!important;right:8px!important;bottom:8px!important;width:auto!important;height:auto!important;max-height:none!important;margin:0!important;overflow:auto!important;min-height:0!important;transform:none!important
+ }
+ .lobby-page>.lobby-nav{position:fixed!important;left:8px!important;top:48px!important;width:66px!important;max-height:calc(100dvh - 56px);overflow:auto}
+ #appearance-dialog .appearance-layout{grid-template-columns:168px minmax(0,1fr);gap:8px}
+ #appearance-dialog .appearance-preview{position:sticky;top:0;padding:6px}
+ #appearance-dialog .appearance-preview>img{width:100px;height:100px}
+ #appearance-dialog .appearance-directions{display:none}
+ #appearance-role-save{min-height:44px!important}
+}
+@media(pointer:coarse) and (orientation:landscape){
+ #home-panel .hero-stage{overflow:hidden}
+ #home-panel .hero-heading{flex:none}
+ #home-panel .hero-heading p{margin:0;font-size:12px}
+ #home-panel .hero-heading h1{margin:4px 0;font-size:22px}
+ #home-panel .hero-world{position:relative;inset:auto;min-height:0;margin:0;flex:1}
+ #home-panel .hero-character,#home-panel .hero-character.decorated{width:170px;height:170px;max-height:none;bottom:0}
+ #home-panel .hero-podium{bottom:4px;width:135px;height:24px}
+ #home-panel .hero-loadout{flex:none;margin:0;padding:4px 0;gap:3px}
+ #home-panel .hero-loadout .section-kicker{display:none}
+ #home-panel .hero-stats{padding-top:6px;flex:none}
+ #home-panel .hero-stats span{font-size:10px;margin-bottom:2px}
+ #home-panel .hero-stats b{font-size:17px}
+ #home-panel .launch-heading{flex-direction:column;align-items:stretch;gap:4px}
+ #home-panel .launch-heading>div{display:flex;justify-content:space-between;align-items:center}
+ #home-panel .launch-heading h2{font-size:18px;margin:0}
+ #home-panel #rooms-open{display:none}
+ #home-panel .ruleset-switch{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:0}
+ #home-panel .ruleset-switch button,#home-panel .mode-switch button{min-height:36px;padding:4px;font-size:11px}
+ #home-panel .map-select-card{height:66px;min-height:66px;margin:5px 0;display:flex;padding:0}
+ #home-panel .map-art{height:62px;width:88px;flex:none}
+ #home-panel #map-preview{height:62px;width:88px;object-fit:cover}
+ #home-panel .map-card-copy{padding:6px}
+ #home-panel .map-card-copy b{font-size:16px}
+ #home-panel .map-card-copy p{font-size:10px;margin:3px 0}
+ #home-panel .mode-switch{margin:3px 0}
+ #home-panel .mode-content{min-height:0;padding:2px 0}
+ #home-panel .mode-content p{font-size:10px;margin:3px 0;line-height:1.3}
+ #home-panel #ai-level{padding:4px;height:32px;font-size:13px!important}
+ #home-panel .launch-button{min-height:42px;height:42px;margin:5px 0 0;padding:6px}
+ #home-panel .launch-note{display:none}
+ #appearance-dialog .appearance-preview{gap:3px}
+ #appearance-dialog .appearance-preview>img{width:82px;height:82px}
+ #appearance-dialog .appearance-summary{margin:2px 0}
+ #appearance-role-save{font-size:12px;padding:4px!important;line-height:1.3;min-height:40px!important}
+ #touch-controls [data-touch-action] .touch-cooldown{inset:auto 0 -3px auto;width:20px;height:20px;font-size:11px;background:#123e55dd}
+}
+@media(pointer:coarse) and (orientation:landscape){
+ #home-panel .hero-stage{margin-bottom:0}
+ #home-panel .mode-content>p{display:none}
+ #home-panel .launch-panel{padding:8px}
+ #home-panel .mode-content>label{font-size:11px}
+ #home-panel .launch-button{flex-shrink:0}
+ #appearance-dialog .window-title{font-size:16px!important;padding:6px!important}
+}
+@media(pointer:coarse) and (orientation:landscape){
+ #home-panel>.lobby-nav{grid-column:auto;flex-direction:column;padding:0}
+ #home-panel>.lobby-nav button{width:64px;flex:none;height:52px;min-height:44px;flex-direction:column;gap:2px}
+ #home-panel .hero-stage{height:auto;min-height:0}
+ #home-panel .hero-loadout{position:static;max-width:none}
+ #home-panel .hero-world{right:auto;top:auto;bottom:auto}
+}
+@media(pointer:coarse) and (orientation:landscape) and (max-height:375px){
+ #home-panel .map-select-card{height:50px;min-height:50px;margin:3px 0}
+ #home-panel .map-art,#home-panel #map-preview{height:46px}
+ #home-panel .ruleset-switch button,#home-panel .mode-switch button{min-height:32px}
+ #home-panel .launch-heading h2{font-size:16px}
+ #home-panel .launch-panel{padding:6px}
+ #home-panel #ai-level{height:28px}
+ #home-panel .launch-button{margin-top:3px}
+}

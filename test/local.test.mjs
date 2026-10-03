@@ -245,3 +245,58 @@ test('character choice survives saves while cosmetic edits cannot change its abi
   const old=saveEnvelope(p);delete old.profile.character;assert.equal(validateSave(old).character,'sea');
   assert.throws(()=>changeProfile(p,{type:'appearance',value:p.appearance,character:'unknown'}));
 });
+import { changeProfile } from '../public/progression.mjs';
+test('profession branches validate prerequisites, preserve old saves and retain each profession',()=>{
+ const p=freshProfile();p.coins=10000;p.gems=1000;
+ assert.throws(()=>changeProfile(p,{type:'profession-upgrade',node:2}));
+ for(let node=0;node<3;node++)for(let i=0;i<3;i++)changeProfile(p,{type:'profession-upgrade',node});
+ assert.deepEqual(p.professions.sea,[3,3,3]);
+ assert.throws(()=>changeProfile(p,{type:'profession-upgrade',node:0}));
+ p.character='wind';changeProfile(p,{type:'profession-upgrade',node:0});
+ const saved=validateSave(saveEnvelope(p));
+ assert.deepEqual(saved.professions.sea,[3,3,3]);assert.deepEqual(saved.professions.wind,[1,0,0]);
+ delete p.professions;assert.deepEqual(validateSave(saveEnvelope(p)).professions.sea,[0,0,0]);
+ p.professions={sea:[0,0,3]};assert.throws(()=>validateSave(saveEnvelope(p)));
+});
+for(const character of ['sea','wind','stone','star'])test(character+' profession ranks affect real character skill',()=>{
+ const {session}=fixture();session.profile.character=character;session.profile.professions={[character]:[3,3,3]};
+ session.receive({type:'create',mode:'classic',mapId:'bun06_8',practice:true});
+ const m=session.match,p=m.players.find(p=>p.id===session.id);
+ m.state='playing';m.time=10;p.slowUntil=50;p.frozenUntil=50;p.stunUntil=50;
+ assert.equal(m.useCharacterSkill(p.id),true);
+ assert.equal(m.useCharacterSkill(p.id),false);
+ if(character==='sea'){assert.equal(p.shieldUntil,13.5);assert.equal(p.frozenUntil,0);assert.equal(p.magnetUntil,13);assert.equal(p.characterReadyAt,28);}
+ if(character==='wind'){assert.equal(p.hasteUntil,17);assert.equal(p.shieldUntil,11.5);assert.equal(p.slowUntil,0);assert.equal(p.characterReadyAt,24);}
+ if(character==='stone'){assert.equal(p.shieldUntil,15.25);assert.equal(p.surgeUntil,16);assert.equal(p.characterReadyAt,32);}
+ if(character==='star'){assert.equal(p.surgeUntil,19);assert.equal(p.magnetUntil,19);assert.equal(p.hasteUntil,13);assert.equal(p.characterReadyAt,30);}
+});
+import {joystickDirection} from '../public/touch-controls.mjs';
+test('joystick dead zone and diagonal hysteresis preserve intentional direction',()=>{
+ assert.equal(joystickDirection(.1,0),null);
+ assert.equal(joystickDirection(.15,0),'right');
+ assert.equal(joystickDirection(-1,0),'left');
+ assert.equal(joystickDirection(0,-1),'up');
+ assert.equal(joystickDirection(.7,.72,'right'),'right');
+ assert.equal(joystickDirection(.3,.8,'right'),'down');
+ assert.equal(joystickDirection(-.8,.2,'right'),'left');
+});
+for(const mode of ['classic','boss','bio','survivor','water11']) {
+ test('max profession upgrades function in '+mode,()=>{
+  const ids={classic:'bun06_8',boss:'boss-court',bio:'bio-lab',survivor:'survivor-grove',water11:'water11_8'};
+  for(const character of ['sea','wind','stone','star']){
+   const {session}=fixture();session.profile.character=character;session.profile.professions={[character]:[3,3,3]};
+   session.receive({type:'create',mode,mapId:ids[mode],solo:true,aiLevel:mode==='classic'?'easy':undefined});
+   const m=session.match,p=m.players.find(p=>p.id===session.id);
+   if(p.run)p.run.offers=[];
+   if(p.bioBuild){p.bioBuild.pending=0;p.bioBuild.offers=[];}
+   m.state='playing';m.time=10;
+   session.receive({type:'character-skill'});
+   assert.ok(p.characterReadyAt>10,character+' activated via real input protocol');
+   const ready=p.characterReadyAt;session.receive({type:'character-skill'});assert.equal(p.characterReadyAt,ready);
+   if(character==='sea')assert.equal(p.shieldUntil,13.5);
+   if(character==='wind')assert.equal(p.hasteUntil,17);
+   if(character==='stone')assert.equal(p.surgeUntil,16);
+   if(character==='star')assert.equal(p.magnetUntil,19);
+  }
+ });
+}

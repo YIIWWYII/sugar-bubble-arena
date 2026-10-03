@@ -1755,5 +1755,12 @@
     "w": 32,
     "h": 32,
     "frames": 1
+  },
+  "gender-heads": {
+    "src": "/assets/gender-heads.png",
+    "w": 100,
+    "h": 100,
+    "frames": 8,
+    "duration": 100
   }
 }

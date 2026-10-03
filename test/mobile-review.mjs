@@ -1,0 +1,48 @@
+import {chromium} from '@playwright/test';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({channel:'chrome',headless:true});
+for(const [width,height] of [[844,390],[667,375],[740,360]]){
+ const page=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(()=>{
+  window.sent=[];
+  const send=Worker.prototype.postMessage;
+  Worker.prototype.postMessage=function(packet,...args){if(packet.type!=='init')window.sent.push(packet);return send.call(this,packet,...args)};
+ });
+ await page.goto('http://localhost:8898/');
+ await page.locator('#entry-guest').click();
+ await page.locator('#appearance-role-save').waitFor({state:'visible'});
+ const save=await page.locator('#appearance-role-save').boundingBox();
+ assert.ok(save.y+save.height<=height,'first save remains onscreen');
+ await page.locator('#appearance-role-save').tap();
+ await page.locator('#home-panel').waitFor({state:'visible'});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight),height);
+ const play=await page.locator('#ai-play').boundingBox();
+ assert.ok(play.y+play.height<=height,'start button visible without scrolling');
+ await page.screenshot({path:'../../work/mobile-home-'+width+'.png'});
+ await page.locator('#ai-play').tap();await page.waitForTimeout(4200);
+ const pad=await page.locator('.touch-pad').boundingBox(), bomb=await page.locator('#touch-bomb').boundingBox();
+ assert.ok(pad.y>height/2);assert.ok(pad.y+pad.height<=height);
+ assert.equal(await page.locator('#touch-bomb svg').count(),1);
+ const client=await page.context().newCDPSession(page);
+ const point={x:pad.x+pad.width/2,y:pad.y+pad.height/2,id:1};
+ await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});
+ const moved={...point,x:point.x+30};
+ await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[moved]});
+ const bubble={x:bomb.x+bomb.width/2,y:bomb.y+bomb.height/2,id:2};
+ await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[moved,bubble]});
+ await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[moved]});
+ await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ const packets=await page.evaluate(()=>window.sent.filter(p=>p.type==='input'));
+ assert.ok(packets.some(p=>p.dir==='right'&&!p.bomb),'joystick sends direction');
+ assert.ok(packets.some(p=>p.dir==='right'&&p.bomb),'simultaneous movement and bubble');
+ assert.equal(packets.at(-1).dir,null);
+ await page.locator('#touch-character').tap();
+ await page.waitForTimeout(150);
+ assert.ok((await page.evaluate(()=>window.sent)).some(p=>p.type==='character-skill'));
+ assert.ok(await page.locator('#touch-character').isDisabled(),'cooldown locks touch button');
+ assert.match(await page.locator('#touch-character .touch-cooldown').textContent(),/\d+/);
+ await page.screenshot({path:'../../work/mobile-combat-'+width+'.png'});
+ assert.deepEqual(errors,[]);console.log('PASS',width,height,'direct save, viewport, multitouch movement+bubble, profession skill/cooldown');await page.close();
+}
+await browser.close();
