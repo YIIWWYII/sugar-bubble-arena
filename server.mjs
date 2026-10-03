@@ -117,6 +117,18 @@ const accounts = accountAPI(profiles, publicOrigin, id => {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");
+    const qrCampaign = url.searchParams.get("qr") ||
+      (url.searchParams.get("utm_source") === "qr" ? url.searchParams.get("utm_campaign") : "");
+    if ((url.pathname === "/" || url.pathname === "/index.html") && qrCampaign) {
+      const forwarded = req.headers["cf-connecting-ip"] || req.headers["x-forwarded-for"];
+      const ip = Array.isArray(forwarded) ? forwarded[0] : String(forwarded || req.socket.remoteAddress || "").split(",")[0].trim();
+      profiles.recordQrVisit({
+        campaign: qrCampaign,
+        ip,
+        userAgent: req.headers["user-agent"],
+        referer: req.headers.referer,
+      });
+    }
     if (await accounts(req,res,url)) return;
     if (url.pathname === "/api/profile") {
       if (req.method !== "GET") {
@@ -366,7 +378,8 @@ wss.on("connection", (ws, req) => {
     }
     try {
       const msg = JSON.parse(raw.toString());
-      if (!multiplayerEnabled && (msg.type === "join" || msg.type === "chat" || String(msg.type).startsWith("town-") ||
+      const isTownChat = msg.type === "chat" && msg.scope === "town";
+      if (!multiplayerEnabled && (msg.type === "join" || (msg.type === "chat" && !isTownChat) ||
           (msg.type === "create" && msg.practice !== true && !Object.hasOwn(BOT_LEVELS,msg.aiLevel ?? '') && !(msg.solo === true && ['boss','bio','survivor','water11'].includes(msg.mode))))) {
         send(ws,{type:"error",message:closedMessage});return;
       }
@@ -658,6 +671,11 @@ wss.on("connection", (ws, req) => {
       if (room.match.paused?.()) return;
       if (msg.type === "bio-antidote") {
         room.match.useAntidote?.(ws.pid);
+        publish(room);
+        return;
+      }
+      if (msg.type === "bio-dome") {
+        room.match.placeDome?.(ws.pid);
         publish(room);
         return;
       }
