@@ -33,13 +33,22 @@ export function touchControls({canPlay, move, bomb, action, chat}) {
   window.addEventListener('resize', stop);
   document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
   root.addEventListener('contextmenu', e => e.preventDefault());
-  document.getElementById('touch-bomb').addEventListener('pointerdown', e => { e.preventDefault(); if(canPlay()) bomb(); });
-  // Keyboard/assistive activation remains available without duplicating touch clicks.
-  document.getElementById('touch-bomb').onclick = e => { if(e.detail === 0 && canPlay()) bomb(); };
-  document.getElementById('touch-chat').onclick = chat;
-  for(const button of root.querySelectorAll('[data-touch-action]')) button.onclick = () => { if(canPlay()) action(button.dataset.touchAction); };
+  // Trigger touch actions on pointerdown so a held joystick pointer never delays
+  // or cancels the action. Keyboard activation remains available through click.
+  const bindAction = (button, fn) => {
+    button.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      if (canPlay() && !button.disabled) fn();
+    }, {passive:false});
+    button.addEventListener('click', e => {
+      if (e.detail === 0 && canPlay() && !button.disabled) fn();
+    });
+  };
+  bindAction(document.getElementById('touch-bomb'), bomb);
+  bindAction(document.getElementById('touch-chat'), chat);
+  for(const button of root.querySelectorAll('[data-touch-action]')) bindAction(button, () => action(button.dataset.touchAction));
   const links = [['touch-character','character-skill-use'],['touch-skill','skill-use'],['touch-dome','bio-dome'],['touch-antidote','bio-antidote'],['touch-cycle','cycle-bomb'],['touch-detonate','detonate-bomb']];
-  for(const [target,source] of links) document.getElementById(target).onclick = () => { if(canPlay()) document.getElementById(source).click(); };
+  for(const [target,source] of links) bindAction(document.getElementById(target), () => document.getElementById(source).click());
   const paths={
     'touch-bomb':'<circle cx="24" cy="25" r="16"/><path d="M14 22q0-8 8-8M30 11l3-5m-4-1h8"/>',
     'touch-character':'<path d="m24 5 6 12 13 2-10 10 2 14-11-7-12 7 3-14L5 19l13-2Z"/>',
